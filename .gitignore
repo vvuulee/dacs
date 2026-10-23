@@ -1,0 +1,10 @@
+# Chặn các thư mục nặng của Frontend (ReactJS)
+**/node_modules/
+**/build/
+.env
+
+# Chặn các thư mục dịch của Backend (Spring Boot)
+**/target/
+**/.idea/
+**/*.iml
+**/.mvn/
