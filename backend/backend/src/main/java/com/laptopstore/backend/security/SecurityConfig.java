@@ -37,26 +37,24 @@ public class SecurityConfig {
                 // 2. Tắt CSRF (vì dùng Token nên không cần bảo vệ CSRF kiểu cũ)
                 .csrf(AbstractHttpConfigurer::disable)
 
-                // 3. Cài đặt không lưu phiên làm việc (Stateless) - Server sẽ không nhớ ai cả,
-                // chỉ nhìn Token
+                // 3. Cài đặt không lưu phiên làm việc (Stateless)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // 4. Phân quyền đường dẫn (Thiết quân luật)
+                // 4. Phân quyền đường dẫn
                 .authorizeHttpRequests(auth -> auth
-                        // Khu vực Lễ tân: Ai cũng có thể vào Đăng ký, Đăng nhập, và trang báo lỗi hệ thống
+                        // Khu vực Công khai: Đăng nhập, kiểm tra lỗi
                         .requestMatchers("/api/auth/**", "/error").permitAll()
 
                         // Cho phép xem danh sách món, biến thể size, topping và danh mục
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/products/**", "/api/variants/**", "/api/toppings/**", "/api/categories/**").permitAll()
-                        // Cho phép tạo đơn bán hàng tại quầy (POS)
-                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/orders").permitAll()
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/orders/**").permitAll()
 
-                        // Khu vực còn lại (Giỏ hàng, Thanh toán...): Bắt buộc phải có thẻ Token hợp lệ
+                        // Cho phép toàn bộ hoạt động POS Bán hàng tại quầy (Tạo đơn, xem đơn, gọi thêm món, thanh toán chốt bill, xem báo cáo)
+                        .requestMatchers("/api/orders/**").permitAll()
+
+                        // Các API còn lại (Quản trị nhân viên, đổi mật khẩu profile...): Yêu cầu Token
                         .anyRequest().authenticated());
 
-        // 5. Đặt ông bảo vệ (JwtAuthFilter) đứng ngay trước cửa kiểm tra mật khẩu mặc
-        // định của Spring
+        // 5. Bộ lọc JWT
         http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -81,7 +79,7 @@ public class SecurityConfig {
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration); // Áp dụng cấu hình này cho mọi API
+        source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 }

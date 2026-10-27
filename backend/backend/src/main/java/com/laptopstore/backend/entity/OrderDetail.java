@@ -4,8 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "order_details")
@@ -37,9 +37,9 @@ public class OrderDetail {
     // Ghi chú chi tiết cho từng ly (Ví dụ: "70% đường, ít đá")
     private String note;
 
-    // Danh sách topping được chọn cho ly nước này
+    // Danh sách topping được chọn cho ly nước này (dùng Set để tránh lỗi MultipleBagFetchException trong Hibernate)
     @OneToMany(mappedBy = "orderDetail", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<OrderDetailTopping> toppings = new ArrayList<>();
+    private Set<OrderDetailTopping> toppings = new LinkedHashSet<>();
 
     public OrderDetail() {
     }
@@ -108,11 +108,11 @@ public class OrderDetail {
         this.note = note;
     }
 
-    public List<OrderDetailTopping> getToppings() {
+    public Set<OrderDetailTopping> getToppings() {
         return toppings;
     }
 
-    public void setToppings(List<OrderDetailTopping> toppings) {
+    public void setToppings(Set<OrderDetailTopping> toppings) {
         this.toppings = toppings;
     }
 }
