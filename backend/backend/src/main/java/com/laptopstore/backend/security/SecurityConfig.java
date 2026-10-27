@@ -51,6 +51,9 @@ public class SecurityConfig {
                         // Cho phép toàn bộ hoạt động POS Bán hàng tại quầy (Tạo đơn, xem đơn, gọi thêm món, thanh toán chốt bill, xem báo cáo)
                         .requestMatchers("/api/orders/**").permitAll()
 
+                        // Cho phép kiểm kê nguyên nhiên liệu cuối ca tại quầy POS
+                        .requestMatchers("/api/ingredients/**").permitAll()
+
                         // Các API còn lại (Quản trị nhân viên, đổi mật khẩu profile...): Yêu cầu Token
                         .anyRequest().authenticated());
 

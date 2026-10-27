@@ -12,6 +12,7 @@ DROP TABLE IF EXISTS products CASCADE;
 DROP TABLE IF EXISTS toppings CASCADE;
 DROP TABLE IF EXISTS categories CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS ingredients CASCADE;
 DROP TABLE IF EXISTS carts CASCADE;
 DROP TABLE IF EXISTS cart_items CASCADE;
 DROP TABLE IF EXISTS order_reviews CASCADE;
@@ -104,6 +105,18 @@ CREATE TABLE order_detail_toppings (
     quantity INT NOT NULL DEFAULT 1
 );
 
+-- Bảng 9: Bảng nguyên nhiên liệu kiểm hàng cuối ca (Bảng độc lập, không liên kết khóa ngoại)
+CREATE TABLE ingredients (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    unit VARCHAR(50) NOT NULL,
+    quantity NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+    min_quantity NUMERIC(10, 2) DEFAULT 0.00,
+    note VARCHAR(255),
+    last_checked_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    last_checked_by VARCHAR(100)
+);
+
 -- =============================================================================
 -- 3. DỮ LIỆU KHỞI TẠO MẪU (SEED DATA SẴN SÀNG SỬ DỤNG)
 -- =============================================================================
@@ -164,7 +177,23 @@ INSERT INTO toppings (id, name, price, is_available) VALUES
 (6, 'Pudding Trứng Mềm Mịn', 10000, true),
 (7, 'Shot Espresso Thêm Đậm Vị', 12000, true);
 
+-- F. Danh mục nguyên nhiên liệu kiểm kê kho cuối ca
+INSERT INTO ingredients (id, name, unit, quantity, min_quantity, note, last_checked_by) VALUES
+(1, 'Hạt cà phê Robusta rang mộc', 'kg', 15.5, 5.0, 'Bao mới nhập đầu tuần, chất lượng tốt', 'nhanvien1'),
+(2, 'Hạt cà phê Arabica Cầu Đất', 'kg', 8.2, 3.0, 'Đang dùng bao số 2', 'nhanvien1'),
+(3, 'Sữa đặc Ngôi Sao Phương Nam (Lon 1.284kg)', 'lon', 24.0, 6.0, 'Đầy đủ trong kho mát', 'nhanvien1'),
+(4, 'Sữa tươi tiệt trùng không đường Barista', 'hộp', 36.0, 10.0, 'Hạn sử dụng còn 4 tháng', 'nhanvien2'),
+(5, 'Bột trà xanh Matcha Nhật Bản Uji', 'gói', 4.5, 1.0, 'Đã khui 1 gói 500g', 'nhanvien2'),
+(6, 'Trà đen Oolong nướng hảo hạng', 'kg', 6.0, 2.0, 'Mùi thơm đậm đà', 'nhanvien1'),
+(7, 'Đường cát trắng Biên Hòa', 'kg', 25.0, 5.0, 'Bao 50kg còn nửa bao', 'nhanvien1'),
+(8, 'Bột béo thực vật B One', 'gói', 12.0, 3.0, 'Nguyên thùng chưa mở', 'nhanvien2'),
+(9, 'Siro Đào Teisseire', 'chai', 5.0, 2.0, 'Đã mở 1 chai', 'nhanvien2'),
+(10, 'Ly nhựa nắp cầu 500ml (Size M)', 'cái', 350.0, 100.0, 'Đủ dùng 3 ngày tới', 'nhanvien1'),
+(11, 'Ly nhựa nắp cầu 700ml (Size L)', 'cái', 280.0, 100.0, 'Đủ dùng 3 ngày tới', 'nhanvien1'),
+(12, 'Ống hút giấy bọc màng', 'cái', 500.0, 150.0, 'Còn 1 bịch lớn', 'nhanvien1');
+
 -- Đặt lại giá trị lớn nhất cho sequence tự tăng
 SELECT setval('categories_id_seq', (SELECT MAX(id) FROM categories));
 SELECT setval('products_id_seq', (SELECT MAX(id) FROM products));
 SELECT setval('toppings_id_seq', (SELECT MAX(id) FROM toppings));
+SELECT setval('ingredients_id_seq', (SELECT MAX(id) FROM ingredients));
