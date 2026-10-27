@@ -1,9 +1,13 @@
 package com.laptopstore.backend.dto;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class PosOrderItemRequest {
     private Long variantId;
     private Integer quantity;
-    private String note; // Ví dụ: "70% đường, ít đá, kèm kem cheese"
+    private String note; // Ví dụ: "70% đường, ít đá"
+    private List<Long> toppingIds = new ArrayList<>(); // Danh sách ID các topping chọn thêm cho ly này
 
     public PosOrderItemRequest() {
     }
@@ -12,6 +16,13 @@ public class PosOrderItemRequest {
         this.variantId = variantId;
         this.quantity = quantity;
         this.note = note;
+    }
+
+    public PosOrderItemRequest(Long variantId, Integer quantity, String note, List<Long> toppingIds) {
+        this.variantId = variantId;
+        this.quantity = quantity;
+        this.note = note;
+        this.toppingIds = toppingIds;
     }
 
     public Long getVariantId() {
@@ -37,5 +48,12 @@ public class PosOrderItemRequest {
     public void setNote(String note) {
         this.note = note;
     }
-}
 
+    public List<Long> getToppingIds() {
+        return toppingIds;
+    }
+
+    public void setToppingIds(List<Long> toppingIds) {
+        this.toppingIds = toppingIds;
+    }
+}

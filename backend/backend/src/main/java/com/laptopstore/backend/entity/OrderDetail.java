@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "order_details")
@@ -32,8 +34,12 @@ public class OrderDetail {
     @Column(nullable = false)
     private BigDecimal price;
 
-    // Ghi chú chi tiết cho từng ly (Ví dụ: "70% đường, ít đá, thêm trân châu")
+    // Ghi chú chi tiết cho từng ly (Ví dụ: "70% đường, ít đá")
     private String note;
+
+    // Danh sách topping được chọn cho ly nước này
+    @OneToMany(mappedBy = "orderDetail", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OrderDetailTopping> toppings = new ArrayList<>();
 
     public OrderDetail() {
     }
@@ -100,5 +106,13 @@ public class OrderDetail {
 
     public void setNote(String note) {
         this.note = note;
+    }
+
+    public List<OrderDetailTopping> getToppings() {
+        return toppings;
+    }
+
+    public void setToppings(List<OrderDetailTopping> toppings) {
+        this.toppings = toppings;
     }
 }

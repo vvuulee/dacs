@@ -4,11 +4,14 @@ import com.laptopstore.backend.dto.PosOrderItemRequest;
 import com.laptopstore.backend.dto.PosOrderRequest;
 import com.laptopstore.backend.entity.Order;
 import com.laptopstore.backend.entity.OrderDetail;
+import com.laptopstore.backend.entity.OrderDetailTopping;
 import com.laptopstore.backend.entity.ProductVariant;
+import com.laptopstore.backend.entity.Topping;
 import com.laptopstore.backend.entity.User;
 import com.laptopstore.backend.repository.OrderDetailRepository;
 import com.laptopstore.backend.repository.OrderRepository;
 import com.laptopstore.backend.repository.ProductVariantRepository;
+import com.laptopstore.backend.repository.ToppingRepository;
 import com.laptopstore.backend.repository.UserRepository;
 import com.laptopstore.backend.security.UserDetailsImpl;
 import org.springframework.http.HttpStatus;
@@ -26,7 +29,7 @@ import java.util.*;
 /**
  * Controller xử lý Bán hàng tại quầy (Coffee Shop POS Controller)
  * - Thu ngân / Nhân viên gọi món và thanh toán trực tiếp
- * - Bán xong là xuất hóa đơn ngay, không có giao hàng online
+ * - Bán xong là xuất hóa đơn ngay, hỗ trợ tính tiền theo size và topping
  */
 @CrossOrigin("*")
 @RestController
@@ -37,15 +40,18 @@ public class OrderController {
     private final OrderDetailRepository orderDetailRepository;
     private final ProductVariantRepository productVariantRepository;
     private final UserRepository userRepository;
+    private final ToppingRepository toppingRepository;
 
     public OrderController(OrderRepository orderRepository,
                            OrderDetailRepository orderDetailRepository,
                            ProductVariantRepository productVariantRepository,
-                           UserRepository userRepository) {
+                           UserRepository userRepository,
+                           ToppingRepository toppingRepository) {
         this.orderRepository = orderRepository;
         this.orderDetailRepository = orderDetailRepository;
         this.productVariantRepository = productVariantRepository;
         this.userRepository = userRepository;
+        this.toppingRepository = toppingRepository;
     }
 
     // 1. Tạo hóa đơn bán hàng tại quầy (POS Order)
@@ -101,6 +107,31 @@ public class OrderController {
             detail.setQuantity(qty);
             detail.setPrice(unitPrice);
             detail.setNote(itemReq.getNote());
+
+            // Xử lý các topping đi kèm của ly này
+            if (itemReq.getToppingIds() != null && !itemReq.getToppingIds().isEmpty()) {
+                for (Long toppingId : itemReq.getToppingIds()) {
+                    if (toppingId != null) {
+                        Optional<Topping> toppingOpt = toppingRepository.findById(toppingId);
+                        if (toppingOpt.isPresent()) {
+                            Topping t = toppingOpt.get();
+                            BigDecimal toppingPrice = BigDecimal.valueOf(t.getPrice() != null ? t.getPrice() : 0.0);
+
+                            OrderDetailTopping detailTopping = new OrderDetailTopping(
+                                    detail,
+                                    t,
+                                    t.getName(),
+                                    toppingPrice,
+                                    1
+                            );
+                            detail.getToppings().add(detailTopping);
+
+                            // Cộng tiền topping vào tổng tiền hóa đơn (nhân theo số ly)
+                            totalAmount = totalAmount.add(toppingPrice.multiply(BigDecimal.valueOf(qty)));
+                        }
+                    }
+                }
+            }
 
             detailList.add(detail);
         }
