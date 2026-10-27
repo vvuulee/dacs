@@ -11,11 +11,13 @@ import java.util.Optional;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
+
     @EntityGraph(attributePaths = {
             "orderDetails",
             "orderDetails.productVariant",
             "orderDetails.productVariant.product",
             "orderDetails.productVariant.product.category",
+            "orderDetails.toppings",
             "staff"
     })
     List<Order> findAllByOrderByIdDesc();
@@ -25,9 +27,22 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "orderDetails.productVariant",
             "orderDetails.productVariant.product",
             "orderDetails.productVariant.product.category",
+            "orderDetails.toppings",
             "staff"
     })
     Optional<Order> findWithDetailsById(Long id);
 
+    @EntityGraph(attributePaths = {
+            "orderDetails",
+            "orderDetails.productVariant",
+            "orderDetails.productVariant.product",
+            "orderDetails.productVariant.product.category",
+            "orderDetails.toppings",
+            "staff"
+    })
+    List<Order> findByStatusOrderByIdDesc(String status);
+
     List<Order> findByCreateAtBetweenOrderByIdDesc(LocalDateTime start, LocalDateTime end);
+
+    List<Order> findByStatusAndCreateAtBetweenOrderByIdDesc(String status, LocalDateTime start, LocalDateTime end);
 }

@@ -10,3 +10,4 @@ import java.util.List;
 public interface OrderDetailToppingRepository extends JpaRepository<OrderDetailTopping, Long> {
     List<OrderDetailTopping> findByOrderDetailId(Long orderDetailId);
 }
+

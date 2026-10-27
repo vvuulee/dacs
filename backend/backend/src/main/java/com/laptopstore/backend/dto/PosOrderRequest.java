@@ -5,6 +5,7 @@ import java.util.List;
 public class PosOrderRequest {
     private String orderType;     // DINE_IN (Tại quán) hoặc TAKE_AWAY (Mang về)
     private String tableName;     // Bàn 01, Bàn 02...
+    private String status;        // PAID (Đã thanh toán) hoặc UNPAID (Chưa thanh toán / Phục vụ trước)
     private String paymentMethod; // CASH, TRANSFER, CARD
     private String note;          // Ghi chú đơn
     private List<PosOrderItemRequest> items;
@@ -26,6 +27,14 @@ public class PosOrderRequest {
 
     public void setTableName(String tableName) {
         this.tableName = tableName;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public String getPaymentMethod() {
@@ -52,4 +61,3 @@ public class PosOrderRequest {
         this.items = items;
     }
 }
-

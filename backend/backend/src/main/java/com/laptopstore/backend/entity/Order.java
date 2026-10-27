@@ -10,8 +10,8 @@ import org.hibernate.annotations.CreationTimestamp;
 
 /**
  * Hóa đơn bán hàng tại quầy (Coffee POS Invoice)
- * - Tạo trực tiếp bởi Thu ngân / Nhân viên tại quầy
- * - Bán xong là hoàn tất, không có trạng thái giao hàng online rườm rà
+ * - Quản lý trạng thái: PAID (Đã thanh toán) hoặc UNPAID (Chưa thanh toán / Bàn đang phục vụ)
+ * - Cho phép khách ngồi tại bàn gọi thêm món trước khi thanh toán chốt bill
  */
 @Entity
 @Table(name = "orders")
@@ -34,6 +34,10 @@ public class Order {
 
     // Số bàn nếu dùng tại quán (Ví dụ: "Bàn 01", "Bàn 02"...)
     private String tableName;
+
+    // Trạng thái hóa đơn: "PAID" (Đã thanh toán) hoặc "UNPAID" (Chưa thanh toán / Đang phục vụ)
+    @Column(nullable = false)
+    private String status = "PAID";
 
     // Hình thức thanh toán: CASH (Tiền mặt), TRANSFER (Chuyển khoản QR), CARD (Thẻ)
     @Column(nullable = false)
@@ -88,6 +92,14 @@ public class Order {
 
     public void setTableName(String tableName) {
         this.tableName = tableName;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public String getPaymentMethod() {
