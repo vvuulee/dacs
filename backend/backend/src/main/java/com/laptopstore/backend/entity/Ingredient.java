@@ -117,3 +117,4 @@ public class Ingredient {
         this.lastCheckedBy = lastCheckedBy;
     }
 }
+

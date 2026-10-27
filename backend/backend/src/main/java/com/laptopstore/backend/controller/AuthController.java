@@ -3,33 +3,21 @@ package com.laptopstore.backend.controller;
 import com.laptopstore.backend.dto.JwtResponse;
 import com.laptopstore.backend.dto.LoginRequest;
 import com.laptopstore.backend.dto.SignupRequest;
-import com.laptopstore.backend.repository.UserRepository;
-import com.laptopstore.backend.security.JwtUtils;
-import com.laptopstore.backend.security.UserDetailsImpl;
+import com.laptopstore.backend.service.AuthService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.*;
 
 @CrossOrigin("*")
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final AuthenticationManager authenticationManager;
-    private final JwtUtils jwtUtils;
 
-    public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder,
-                          AuthenticationManager authenticationManager, JwtUtils jwtUtils) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.authenticationManager = authenticationManager;
-        this.jwtUtils = jwtUtils;
+    private final AuthService authService;
+
+    public AuthController(AuthService authService) {
+        this.authService = authService;
     }
 
     /**
@@ -49,15 +37,9 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
         try {
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword())
-            );
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-            String jwt = jwtUtils.generateToken(userDetails.getUsername());
-            String role = userDetails.getAuthorities().iterator().next().getAuthority();
-            return ResponseEntity.ok(new JwtResponse(jwt, userDetails.getId(), userDetails.getUsername(), role));
-        } catch (org.springframework.security.authentication.BadCredentialsException e) {
+            JwtResponse response = authService.authenticateUser(loginRequest);
+            return ResponseEntity.ok(response);
+        } catch (BadCredentialsException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body("Sai tên đăng nhập hoặc mật khẩu!");
         } catch (Exception e) {

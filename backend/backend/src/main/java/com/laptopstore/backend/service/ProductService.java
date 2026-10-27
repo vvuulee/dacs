@@ -161,4 +161,12 @@ public class ProductService {
             productVariantRepository.save(variantToSave);
         }
     }
+
+    public List<ProductVariant> getAllVariants() {
+        return productVariantRepository.findAll();
+    }
+
+    public List<ProductVariant> getVariantsByProductId(Long productId) {
+        return productVariantRepository.findByProductId(productId);
+    }
 }
