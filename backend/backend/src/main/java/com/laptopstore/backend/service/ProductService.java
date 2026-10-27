@@ -136,7 +136,6 @@ public class ProductService {
             ProductVariant defaultVariant = new ProductVariant();
             defaultVariant.setProduct(product);
             defaultVariant.setSize("Size M");
-            defaultVariant.setColor("Size M");
             defaultVariant.setPrice(BigDecimal.valueOf(product.getPrice() != null ? product.getPrice() : 0));
             defaultVariant.setStockQuantity(100);
             defaultVariant.setImageUrl(product.getImageUrl());
@@ -148,13 +147,9 @@ public class ProductService {
             ProductVariant variantToSave = new ProductVariant();
             variantToSave.setProduct(product);
 
-            // Ưu tiên lấy size, nếu chưa có thì lấy từ color (tương thích cả 2 chiều)
-            String variantSize = (v.getSize() != null && !v.getSize().isBlank())
-                    ? v.getSize()
-                    : ((v.getColor() != null && !v.getColor().isBlank()) ? v.getColor() : "Size M");
+            String variantSize = (v.getSize() != null && !v.getSize().isBlank()) ? v.getSize().trim() : "Size M";
 
             variantToSave.setSize(variantSize);
-            variantToSave.setColor(variantSize);
             variantToSave.setStockQuantity(v.getStockQuantity() != null ? v.getStockQuantity() : 100);
             variantToSave.setPrice(v.getPrice() != null
                     ? v.getPrice()

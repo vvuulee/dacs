@@ -109,7 +109,7 @@ public class OrderController {
             detail.setOrder(order);
             detail.setProductVariant(variant);
             detail.setProductName(variant.getProduct() != null ? variant.getProduct().getName() : "Đồ uống");
-            detail.setSize(variant.getSize() != null ? variant.getSize() : variant.getColor());
+            detail.setSize(variant.getSize() != null ? variant.getSize() : "Size M");
             detail.setQuantity(qty);
             detail.setPrice(unitPrice);
             detail.setNote(itemReq.getNote());
@@ -203,7 +203,7 @@ public class OrderController {
             detail.setOrder(order);
             detail.setProductVariant(variant);
             detail.setProductName(variant.getProduct() != null ? variant.getProduct().getName() : "Đồ uống");
-            detail.setSize(variant.getSize() != null ? variant.getSize() : variant.getColor());
+            detail.setSize(variant.getSize() != null ? variant.getSize() : "Size M");
             detail.setQuantity(qty);
             detail.setPrice(unitPrice);
             detail.setNote(itemReq.getNote());

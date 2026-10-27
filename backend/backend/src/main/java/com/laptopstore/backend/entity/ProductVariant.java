@@ -3,6 +3,9 @@ package com.laptopstore.backend.entity;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 
+/**
+ * Biến thể món đồ uống (Kích cỡ Size: Size S, Size M, Size L)
+ */
 @Entity
 @Table(name = "product_variants")
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
@@ -16,11 +19,9 @@ public class ProductVariant {
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"variants", "hibernateLazyInitializer", "handler"})
     private Product product;
 
-    // Lưu kích cỡ đồ uống: Size S, Size M, Size L
-    private String size;
-
+    // Lưu kích cỡ đồ uống: Size S, Size M, Size L, Tiêu chuẩn
     @Column(nullable = false)
-    private String color;
+    private String size;
 
     @Column(nullable = false)
     private BigDecimal price;
@@ -45,25 +46,11 @@ public class ProductVariant {
     }
 
     public String getSize() {
-        return size != null ? size : color;
+        return size;
     }
 
     public void setSize(String size) {
         this.size = size;
-        if (this.color == null || this.color.isBlank()) {
-            this.color = size;
-        }
-    }
-
-    public String getColor() {
-        return color != null ? color : size;
-    }
-
-    public void setColor(String color) {
-        this.color = color;
-        if (this.size == null || this.size.isBlank()) {
-            this.size = color;
-        }
     }
 
     public BigDecimal getPrice() {

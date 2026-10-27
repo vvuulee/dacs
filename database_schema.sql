@@ -55,8 +55,7 @@ CREATE TABLE products (
 CREATE TABLE product_variants (
     id BIGSERIAL PRIMARY KEY,
     product_id BIGINT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-    size VARCHAR(50) NOT NULL, -- 'Size S', 'Size M', 'Size L'
-    color VARCHAR(50),
+    size VARCHAR(50) NOT NULL, -- 'Size S', 'Size M', 'Size L', 'Tiêu chuẩn'
     price NUMERIC(38, 2) NOT NULL,
     stock_quantity INT DEFAULT 100,
     image_url VARCHAR(500)
@@ -138,22 +137,22 @@ INSERT INTO products (id, category_id, name, price, image_url, is_available) VAL
 (8, 4, 'Bánh Croissant Bơ Tỏi', 28000, 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=500', true);
 
 -- D. Kích cỡ & Giá tiền tương ứng (Product Variants)
-INSERT INTO product_variants (product_id, size, color, price, stock_quantity) VALUES
-(1, 'Size M', 'Size M', 29000.00, 100),
-(1, 'Size L', 'Size L', 35000.00, 100),
-(2, 'Size M', 'Size M', 32000.00, 100),
-(2, 'Size L', 'Size L', 38000.00, 100),
-(3, 'Size M', 'Size M', 35000.00, 100),
-(3, 'Size L', 'Size L', 40000.00, 100),
-(4, 'Size M', 'Size M', 39000.00, 100),
-(4, 'Size L', 'Size L', 45000.00, 100),
-(5, 'Size M', 'Size M', 39000.00, 100),
-(5, 'Size L', 'Size L', 45000.00, 100),
-(6, 'Size M', 'Size M', 42000.00, 100),
-(6, 'Size L', 'Size L', 48000.00, 100),
-(7, 'Size M', 'Size M', 45000.00, 100),
-(7, 'Size L', 'Size L', 52000.00, 100),
-(8, 'Tiêu chuẩn', 'Tiêu chuẩn', 28000.00, 50);
+INSERT INTO product_variants (product_id, size, price, stock_quantity) VALUES
+(1, 'Size M', 29000.00, 100),
+(1, 'Size L', 35000.00, 100),
+(2, 'Size M', 32000.00, 100),
+(2, 'Size L', 38000.00, 100),
+(3, 'Size M', 35000.00, 100),
+(3, 'Size L', 40000.00, 100),
+(4, 'Size M', 39000.00, 100),
+(4, 'Size L', 45000.00, 100),
+(5, 'Size M', 39000.00, 100),
+(5, 'Size L', 45000.00, 100),
+(6, 'Size M', 42000.00, 100),
+(6, 'Size L', 48000.00, 100),
+(7, 'Size M', 45000.00, 100),
+(7, 'Size L', 52000.00, 100),
+(8, 'Tiêu chuẩn', 28000.00, 50);
 
 -- E. Topping gọi thêm (Toppings)
 INSERT INTO toppings (id, name, price, is_available) VALUES
