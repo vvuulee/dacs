@@ -98,5 +98,3 @@ public class Product {
         this.variants = variants;
     }
 }
-
-}
