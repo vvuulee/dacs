@@ -1,11 +1,11 @@
 package com.laptopstore.backend.entity;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 
 @Entity
 @Table(name = "product_variants")
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+@com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class ProductVariant {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -13,7 +13,11 @@ public class ProductVariant {
 
     @ManyToOne
     @JoinColumn(name = "product_id")
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"variants", "hibernateLazyInitializer", "handler"})
     private Product product;
+
+    // Lưu kích cỡ đồ uống: Size S, Size M, Size L
+    private String size;
 
     @Column(nullable = false)
     private String color;
@@ -40,12 +44,26 @@ public class ProductVariant {
         this.product = product;
     }
 
+    public String getSize() {
+        return size != null ? size : color;
+    }
+
+    public void setSize(String size) {
+        this.size = size;
+        if (this.color == null || this.color.isBlank()) {
+            this.color = size;
+        }
+    }
+
     public String getColor() {
-        return color;
+        return color != null ? color : size;
     }
 
     public void setColor(String color) {
         this.color = color;
+        if (this.size == null || this.size.isBlank()) {
+            this.size = color;
+        }
     }
 
     public BigDecimal getPrice() {

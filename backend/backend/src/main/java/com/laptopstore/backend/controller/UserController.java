@@ -1,6 +1,7 @@
 package com.laptopstore.backend.controller;
 
 import com.laptopstore.backend.dto.AdminRoleRequest;
+import com.laptopstore.backend.dto.StaffRequest;
 import com.laptopstore.backend.dto.UpdateProfileRequest;
 import com.laptopstore.backend.dto.UserProfileResponse;
 import com.laptopstore.backend.entity.User;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@CrossOrigin("*")
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
@@ -37,7 +39,23 @@ public class UserController {
         );
     }
 
-    // 1. Lấy thông tin cá nhân của người dùng đang đăng nhập
+    private UserProfileResponse mapToResponse(User user) {
+        return new UserProfileResponse(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getFullName(),
+                user.getPhone(),
+                user.getAddress(),
+                user.getRole(),
+                user.getCreateAt()
+        );
+    }
+
+    // ==========================================
+    // 1. THÔNG TIN CÁ NHÂN (PROFILE)
+    // ==========================================
+
     @GetMapping("/profile")
     public ResponseEntity<?> getProfile(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         if (userDetails == null) {
@@ -49,21 +67,9 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Không tìm thấy thông tin tài khoản!");
         }
 
-        UserProfileResponse response = new UserProfileResponse(
-                user.getId(),
-                user.getUsername(),
-                user.getEmail(),
-                user.getFullName(),
-                user.getPhone(),
-                user.getAddress(),
-                user.getRole(),
-                user.getCreateAt()
-        );
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(mapToResponse(user));
     }
 
-    // 2. Cập nhật thông tin cá nhân và mật khẩu
     @PutMapping("/profile")
     @Transactional
     public ResponseEntity<?> updateProfile(@AuthenticationPrincipal UserDetailsImpl userDetails,
@@ -77,7 +83,7 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Không tìm thấy thông tin tài khoản!");
         }
 
-        // 1. Kiểm tra và cập nhật Email
+        // Cập nhật Email
         if (request.getEmail() != null && !request.getEmail().trim().isEmpty()) {
             String newEmail = request.getEmail().trim();
             if (!newEmail.equalsIgnoreCase(user.getEmail())) {
@@ -89,7 +95,7 @@ public class UserController {
             }
         }
 
-        // 2. Cập nhật thông tin cơ bản: Tên, Số điện thoại, Địa chỉ
+        // Cập nhật Họ tên, SĐT, Địa chỉ
         if (request.getFullName() != null) {
             user.setFullName(request.getFullName().trim());
         }
@@ -100,7 +106,7 @@ public class UserController {
             user.setAddress(request.getAddress().trim());
         }
 
-        // 3. Xử lý đổi mật khẩu (nếu người dùng có nhập mật khẩu mới)
+        // Đổi mật khẩu
         if (request.getNewPassword() != null && !request.getNewPassword().trim().isEmpty()) {
             String newPass = request.getNewPassword().trim();
             if (newPass.length() < 6) {
@@ -119,169 +125,244 @@ public class UserController {
         }
 
         userRepository.save(user);
-
-        UserProfileResponse response = new UserProfileResponse(
-                user.getId(),
-                user.getUsername(),
-                user.getEmail(),
-                user.getFullName(),
-                user.getPhone(),
-                user.getAddress(),
-                user.getRole(),
-                user.getCreateAt()
-        );
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(mapToResponse(user));
     }
 
-    // 3. Lấy danh sách Quản trị viên (Chỉ Admin)
-    @GetMapping("/admins")
+    // ==========================================
+    // 2. QUẢN LÝ NHÂN VIÊN (STAFF MANAGEMENT - CHỈ ADMIN)
+    // ==========================================
+
+    /**
+     * Lấy danh sách tất cả nhân viên quán cafe (ROLE_STAFF)
+     */
+    @GetMapping("/staff")
     @PreAuthorize("hasRole('ADMIN') or hasAuthority('ROLE_ADMIN')")
-    public ResponseEntity<?> getAdminUsers(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+    public ResponseEntity<?> getAllStaff(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         if (!isAdmin(userDetails)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Từ chối truy cập: Chỉ Quản trị viên mới có quyền xem danh sách này!");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Từ chối truy cập: Chỉ Quản trị viên mới có quyền xem danh sách nhân viên!");
         }
 
-        List<User> admins = userRepository.findByRoleInOrderByIdDesc(List.of("ROLE_ADMIN", "ADMIN"));
-        List<UserProfileResponse> responses = admins.stream()
-                .map(u -> new UserProfileResponse(
-                        u.getId(),
-                        u.getUsername(),
-                        u.getEmail(),
-                        u.getFullName(),
-                        u.getPhone(),
-                        u.getAddress(),
-                        u.getRole(),
-                        u.getCreateAt()
-                ))
+        List<User> staffList = userRepository.findByRoleInOrderByIdDesc(List.of("ROLE_STAFF", "STAFF"));
+        List<UserProfileResponse> responses = staffList.stream()
+                .map(this::mapToResponse)
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(responses);
     }
 
-    // 4. Trao quyền Quản trị viên cho người dùng bằng Email và Tên
+    /**
+     * Lấy toàn bộ danh sách tài khoản nội bộ (Admin + Staff)
+     */
+    @GetMapping
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<?> getAllUsers(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        if (!isAdmin(userDetails)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Từ chối truy cập: Chỉ Quản trị viên mới có quyền xem!");
+        }
+
+        List<User> allUsers = userRepository.findAllByOrderByIdDesc();
+        List<UserProfileResponse> responses = allUsers.stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(responses);
+    }
+
+    /**
+     * Admin tạo tài khoản Nhân viên mới cho quán
+     */
+    @PostMapping("/staff")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ROLE_ADMIN')")
+    @Transactional
+    public ResponseEntity<?> createStaff(@AuthenticationPrincipal UserDetailsImpl userDetails,
+                                         @RequestBody StaffRequest request) {
+        if (!isAdmin(userDetails)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Từ chối truy cập: Chỉ Quản trị viên mới có quyền tạo tài khoản nhân viên!");
+        }
+
+        if (request.getUsername() == null || request.getUsername().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Tên đăng nhập không được để trống!");
+        }
+        String username = request.getUsername().trim().toLowerCase();
+
+        if (userRepository.existsByUsername(username)) {
+            return ResponseEntity.badRequest().body("Tên đăng nhập '" + username + "' đã tồn tại!");
+        }
+
+        if (request.getPassword() == null || request.getPassword().trim().length() < 6) {
+            return ResponseEntity.badRequest().body("Mật khẩu phải có ít nhất 6 ký tự!");
+        }
+
+        String email = (request.getEmail() != null && !request.getEmail().trim().isEmpty())
+                ? request.getEmail().trim()
+                : (username + "@cafe.internal");
+
+        if (userRepository.existsByEmail(email)) {
+            return ResponseEntity.badRequest().body("Email '" + email + "' đã tồn tại trong hệ thống!");
+        }
+
+        User staff = new User();
+        staff.setUsername(username);
+        staff.setPassword(passwordEncoder.encode(request.getPassword().trim()));
+        staff.setEmail(email);
+        staff.setFullName(request.getFullName() != null ? request.getFullName().trim() : username);
+        staff.setPhone(request.getPhone() != null ? request.getPhone().trim() : null);
+        staff.setRole("ROLE_STAFF");
+
+        User saved = userRepository.save(staff);
+        return new ResponseEntity<>(mapToResponse(saved), HttpStatus.CREATED);
+    }
+
+    /**
+     * Admin cập nhật thông tin nhân viên
+     */
+    @PutMapping("/staff/{id}")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ROLE_ADMIN')")
+    @Transactional
+    public ResponseEntity<?> updateStaff(@AuthenticationPrincipal UserDetailsImpl userDetails,
+                                         @PathVariable Long id,
+                                         @RequestBody StaffRequest request) {
+        if (!isAdmin(userDetails)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Từ chối truy cập: Chỉ Quản trị viên mới có quyền sửa!");
+        }
+
+        Optional<User> staffOpt = userRepository.findById(id);
+        if (staffOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Không tìm thấy nhân viên với ID: " + id);
+        }
+
+        User staff = staffOpt.get();
+
+        if (request.getFullName() != null) {
+            staff.setFullName(request.getFullName().trim());
+        }
+        if (request.getPhone() != null) {
+            staff.setPhone(request.getPhone().trim());
+        }
+        if (request.getEmail() != null && !request.getEmail().trim().isEmpty()) {
+            String newEmail = request.getEmail().trim();
+            if (!newEmail.equalsIgnoreCase(staff.getEmail())) {
+                Optional<User> emailCheck = userRepository.findByEmail(newEmail);
+                if (emailCheck.isPresent() && !emailCheck.get().getId().equals(staff.getId())) {
+                    return ResponseEntity.badRequest().body("Email này đã được sử dụng bởi tài khoản khác!");
+                }
+                staff.setEmail(newEmail);
+            }
+        }
+        if (request.getPassword() != null && !request.getPassword().trim().isEmpty()) {
+            if (request.getPassword().trim().length() < 6) {
+                return ResponseEntity.badRequest().body("Mật khẩu mới phải có ít nhất 6 ký tự!");
+            }
+            staff.setPassword(passwordEncoder.encode(request.getPassword().trim()));
+        }
+
+        if (request.getRole() != null && !request.getRole().isBlank()) {
+            staff.setRole(request.getRole().trim());
+        }
+
+        userRepository.save(staff);
+        return ResponseEntity.ok(mapToResponse(staff));
+    }
+
+    /**
+     * Admin xóa tài khoản nhân viên
+     */
+    @DeleteMapping("/staff/{id}")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ROLE_ADMIN')")
+    @Transactional
+    public ResponseEntity<?> deleteStaff(@AuthenticationPrincipal UserDetailsImpl userDetails,
+                                         @PathVariable Long id) {
+        if (!isAdmin(userDetails)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Từ chối truy cập: Chỉ Quản trị viên mới có quyền xóa!");
+        }
+
+        if (userDetails.getId().equals(id)) {
+            return ResponseEntity.badRequest().body("Bạn không thể tự xóa tài khoản của chính mình!");
+        }
+
+        Optional<User> userOpt = userRepository.findById(id);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Không tìm thấy tài khoản với ID: " + id);
+        }
+
+        userRepository.deleteById(id);
+        return ResponseEntity.ok("Đã xóa tài khoản nhân viên thành công!");
+    }
+
+    // ==========================================
+    // 3. QUẢN LÝ ADMIN (QUẢN TRỊ VIÊN)
+    // ==========================================
+
+    @GetMapping("/admins")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<?> getAdminUsers(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        if (!isAdmin(userDetails)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Từ chối truy cập!");
+        }
+
+        List<User> admins = userRepository.findByRoleInOrderByIdDesc(List.of("ROLE_ADMIN", "ADMIN"));
+        List<UserProfileResponse> responses = admins.stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(responses);
+    }
+
     @PostMapping("/grant-admin")
     @PreAuthorize("hasRole('ADMIN') or hasAuthority('ROLE_ADMIN')")
     @Transactional
     public ResponseEntity<?> grantAdminRole(@AuthenticationPrincipal UserDetailsImpl userDetails,
-                                           @RequestBody AdminRoleRequest request) {
+                                            @RequestBody AdminRoleRequest request) {
         if (!isAdmin(userDetails)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Từ chối truy cập: Chỉ Quản trị viên mới có quyền trao quyền!");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Từ chối truy cập!");
         }
 
         if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Vui lòng nhập Email của người dùng cần trao quyền Admin!");
-        }
-        if (request.getName() == null || request.getName().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Vui lòng nhập Tên (Username hoặc Họ tên) của người dùng!");
+            return ResponseEntity.badRequest().body("Vui lòng nhập Email!");
         }
 
         String cleanEmail = request.getEmail().trim();
         Optional<User> userOpt = userRepository.findByEmail(cleanEmail);
         if (userOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("Không tìm thấy tài khoản người dùng với Email: " + cleanEmail);
+                    .body("Không tìm thấy tài khoản với Email: " + cleanEmail);
         }
 
         User targetUser = userOpt.get();
-        String cleanName = request.getName().trim().toLowerCase();
-        String username = targetUser.getUsername() != null ? targetUser.getUsername().toLowerCase() : "";
-        String fullName = targetUser.getFullName() != null ? targetUser.getFullName().toLowerCase() : "";
-
-        boolean matches = username.contains(cleanName) || cleanName.contains(username)
-                || (!fullName.isEmpty() && (fullName.contains(cleanName) || cleanName.contains(fullName)));
-
-        if (!matches) {
-            return ResponseEntity.badRequest()
-                    .body("Tên người dùng không khớp với thông tin tài khoản sở hữu Email này! (Email: " + cleanEmail + ")");
-        }
-
-        if ("ROLE_ADMIN".equals(targetUser.getRole()) || "ADMIN".equals(targetUser.getRole())) {
-            return ResponseEntity.badRequest()
-                    .body("Tài khoản '" + targetUser.getUsername() + "' (" + cleanEmail + ") hiện đã là Quản trị viên (Admin) rồi!");
-        }
-
         targetUser.setRole("ROLE_ADMIN");
         userRepository.save(targetUser);
 
-        UserProfileResponse response = new UserProfileResponse(
-                targetUser.getId(),
-                targetUser.getUsername(),
-                targetUser.getEmail(),
-                targetUser.getFullName(),
-                targetUser.getPhone(),
-                targetUser.getAddress(),
-                targetUser.getRole(),
-                targetUser.getCreateAt()
-        );
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(mapToResponse(targetUser));
     }
 
-    // 5. Thu hồi quyền Quản trị viên (Gỡ quyền Admin)
     @PostMapping("/revoke-admin")
     @PreAuthorize("hasRole('ADMIN') or hasAuthority('ROLE_ADMIN')")
     @Transactional
     public ResponseEntity<?> revokeAdminRole(@AuthenticationPrincipal UserDetailsImpl userDetails,
-                                            @RequestBody AdminRoleRequest request) {
+                                             @RequestBody AdminRoleRequest request) {
         if (!isAdmin(userDetails)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Từ chối truy cập: Chỉ Quản trị viên mới có quyền gỡ quyền!");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Từ chối truy cập!");
         }
 
         if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Vui lòng nhập Email của người dùng cần gỡ quyền Admin!");
+            return ResponseEntity.badRequest().body("Vui lòng nhập Email!");
         }
 
         String cleanEmail = request.getEmail().trim();
         Optional<User> userOpt = userRepository.findByEmail(cleanEmail);
         if (userOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("Không tìm thấy tài khoản người dùng với Email: " + cleanEmail);
+                    .body("Không tìm thấy tài khoản với Email: " + cleanEmail);
         }
 
         User targetUser = userOpt.get();
-
-        // Không cho phép tự gỡ quyền của chính mình
         if (targetUser.getId().equals(userDetails.getId())) {
-            return ResponseEntity.badRequest()
-                    .body("Bạn không thể tự gỡ quyền Quản trị viên của chính mình để tránh mất quyền kiểm soát hệ thống!");
+            return ResponseEntity.badRequest().body("Không thể tự gỡ quyền Quản trị viên của chính mình!");
         }
 
-        if (!"ROLE_ADMIN".equals(targetUser.getRole()) && !"ADMIN".equals(targetUser.getRole())) {
-            return ResponseEntity.badRequest()
-                    .body("Tài khoản '" + targetUser.getUsername() + "' (" + cleanEmail + ") hiện không phải là Quản trị viên!");
-        }
-
-        // Nếu có nhập tên, kiểm tra tính khớp
-        if (request.getName() != null && !request.getName().trim().isEmpty()) {
-            String cleanName = request.getName().trim().toLowerCase();
-            String username = targetUser.getUsername() != null ? targetUser.getUsername().toLowerCase() : "";
-            String fullName = targetUser.getFullName() != null ? targetUser.getFullName().toLowerCase() : "";
-
-            boolean matches = username.contains(cleanName) || cleanName.contains(username)
-                    || (!fullName.isEmpty() && (fullName.contains(cleanName) || cleanName.contains(fullName)));
-
-            if (!matches) {
-                return ResponseEntity.badRequest()
-                        .body("Tên người dùng không khớp với thông tin tài khoản sở hữu Email này!");
-            }
-        }
-
-        targetUser.setRole("ROLE_USER");
+        targetUser.setRole("ROLE_STAFF");
         userRepository.save(targetUser);
 
-        UserProfileResponse response = new UserProfileResponse(
-                targetUser.getId(),
-                targetUser.getUsername(),
-                targetUser.getEmail(),
-                targetUser.getFullName(),
-                targetUser.getPhone(),
-                targetUser.getAddress(),
-                targetUser.getRole(),
-                targetUser.getCreateAt()
-        );
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(mapToResponse(targetUser));
     }
 }
-

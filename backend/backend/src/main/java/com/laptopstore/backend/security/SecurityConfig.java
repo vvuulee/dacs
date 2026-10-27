@@ -46,9 +46,11 @@ public class SecurityConfig {
                         // Khu vực Lễ tân: Ai cũng có thể vào Đăng ký, Đăng nhập, và trang báo lỗi hệ thống
                         .requestMatchers("/api/auth/**", "/error").permitAll()
 
-                        // Cho phép khách vãng lai xem danh sách sản phẩm, biến thể và chat với AI tư vấn mà không cần đăng nhập
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/products/**", "/api/variants/**", "/api/chat/**").permitAll()
-                        .requestMatchers("/api/chat/**").permitAll()
+                        // Cho phép xem danh sách món, biến thể size, topping và danh mục
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/products/**", "/api/variants/**", "/api/toppings/**", "/api/categories/**").permitAll()
+                        // Cho phép tạo đơn bán hàng tại quầy (POS)
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/orders").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/orders/**").permitAll()
 
                         // Khu vực còn lại (Giỏ hàng, Thanh toán...): Bắt buộc phải có thẻ Token hợp lệ
                         .anyRequest().authenticated());

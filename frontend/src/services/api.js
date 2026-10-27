@@ -53,6 +53,16 @@ export const getVariantsByProduct = async (productId) => {
   }
 };
 
+export const getToppings = async () => {
+  try {
+    const response = await apiClient.get('/toppings');
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách topping:", error);
+    return [];
+  }
+};
+
 export const addToCart = async (variantId, quantity = 1) => {
   const response = await apiClient.post('/carts/add', { variantId, quantity });
   return response.data;

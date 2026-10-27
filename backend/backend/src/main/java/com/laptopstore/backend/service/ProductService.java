@@ -37,21 +37,25 @@ public class ProductService {
 
     public Product getProductById(Long id) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm với ID: " + id));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy món với ID: " + id));
         product.setVariants(productVariantRepository.findByProductId(id));
         return product;
     }
 
     @Transactional
     public Product createProduct(Product product) {
-        // 1. Xử lý Category (Dòng laptop)
+        // 1. Xử lý Category (Danh mục đồ uống / bánh ngọt)
         resolveCategory(product);
 
-        // 2. Lưu thông tin chung của Laptop
+        if (product.getIsAvailable() == null) {
+            product.setIsAvailable(true);
+        }
+
+        // 2. Lưu thông tin chung của món
         List<ProductVariant> incomingVariants = product.getVariants();
         Product savedProduct = productRepository.save(product);
 
-        // 3. Lưu danh sách màu sắc & số lượng tồn kho vào bảng product_variants
+        // 3. Lưu danh sách Size (S, M, L) & giá tiền vào bảng product_variants
         saveVariantsForProduct(savedProduct, incomingVariants);
 
         savedProduct.setVariants(productVariantRepository.findByProductId(savedProduct.getId()));
@@ -61,14 +65,12 @@ public class ProductService {
     @Transactional
     public Product updateProduct(Long id, Product productDetails) {
         Product existingProduct = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm với ID: " + id));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy món với ID: " + id));
 
         existingProduct.setName(productDetails.getName());
-        existingProduct.setCpu(productDetails.getCpu());
-        existingProduct.setRamGb(productDetails.getRamGb());
-        existingProduct.setStorageGb(productDetails.getStorageGb());
-        existingProduct.setVga(productDetails.getVga());
-        existingProduct.setScreenSize(productDetails.getScreenSize());
+        if (productDetails.getIsAvailable() != null) {
+            existingProduct.setIsAvailable(productDetails.getIsAvailable());
+        }
         existingProduct.setImageUrl(productDetails.getImageUrl());
         existingProduct.setPrice(productDetails.getPrice());
 
@@ -79,8 +81,13 @@ public class ProductService {
 
         Product updatedProduct = productRepository.save(existingProduct);
 
-        // Cập nhật danh sách màu sắc & số lượng
+        // Cập nhật danh sách Size (S, M, L) & giá tiền
         if (productDetails.getVariants() != null && !productDetails.getVariants().isEmpty()) {
+            // Xóa các size cũ của món này và lưu lại danh sách size mới để tránh trùng lặp
+            List<ProductVariant> oldVariants = productVariantRepository.findByProductId(id);
+            if (oldVariants != null && !oldVariants.isEmpty()) {
+                productVariantRepository.deleteAll(oldVariants);
+            }
             saveVariantsForProduct(updatedProduct, productDetails.getVariants());
         }
 
@@ -125,28 +132,30 @@ public class ProductService {
 
     private void saveVariantsForProduct(Product product, List<ProductVariant> variants) {
         if (variants == null || variants.isEmpty()) {
-            // Nếu không truyền biến thể nào, tạo 1 biến thể mặc định để khách vẫn mua được
+            // Nếu không truyền Size nào, tự động tạo Size M tiêu chuẩn
             ProductVariant defaultVariant = new ProductVariant();
             defaultVariant.setProduct(product);
-            defaultVariant.setColor("Tiêu chuẩn");
+            defaultVariant.setSize("Size M");
+            defaultVariant.setColor("Size M");
             defaultVariant.setPrice(BigDecimal.valueOf(product.getPrice() != null ? product.getPrice() : 0));
-            defaultVariant.setStockQuantity(10);
+            defaultVariant.setStockQuantity(100);
             defaultVariant.setImageUrl(product.getImageUrl());
             productVariantRepository.save(defaultVariant);
             return;
         }
 
         for (ProductVariant v : variants) {
-            ProductVariant variantToSave;
-            if (v.getId() != null) {
-                variantToSave = productVariantRepository.findById(v.getId()).orElse(new ProductVariant());
-            } else {
-                variantToSave = new ProductVariant();
-            }
-
+            ProductVariant variantToSave = new ProductVariant();
             variantToSave.setProduct(product);
-            variantToSave.setColor(v.getColor() != null && !v.getColor().isBlank() ? v.getColor() : "Tiêu chuẩn");
-            variantToSave.setStockQuantity(v.getStockQuantity() != null ? v.getStockQuantity() : 0);
+
+            // Ưu tiên lấy size, nếu chưa có thì lấy từ color (tương thích cả 2 chiều)
+            String variantSize = (v.getSize() != null && !v.getSize().isBlank())
+                    ? v.getSize()
+                    : ((v.getColor() != null && !v.getColor().isBlank()) ? v.getColor() : "Size M");
+
+            variantToSave.setSize(variantSize);
+            variantToSave.setColor(variantSize);
+            variantToSave.setStockQuantity(v.getStockQuantity() != null ? v.getStockQuantity() : 100);
             variantToSave.setPrice(v.getPrice() != null
                     ? v.getPrice()
                     : BigDecimal.valueOf(product.getPrice() != null ? product.getPrice() : 0));
@@ -157,4 +166,6 @@ public class ProductService {
             productVariantRepository.save(variantToSave);
         }
     }
+}
+
 }

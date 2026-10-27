@@ -22,11 +22,21 @@ public class OrderDetail {
     @JoinColumn(name = "product_variant_id", nullable = false)
     private ProductVariant productVariant;
 
+    // Lưu snapshot tên món và kích cỡ tại thời điểm bán
+    private String productName;
+    private String size;
+
     @Column(nullable = false)
     private Integer quantity;
 
     @Column(nullable = false)
     private BigDecimal price;
+
+    // Ghi chú chi tiết cho từng ly (Ví dụ: "70% đường, ít đá, thêm trân châu")
+    private String note;
+
+    public OrderDetail() {
+    }
 
     public Long getId() {
         return id;
@@ -52,6 +62,22 @@ public class OrderDetail {
         this.productVariant = productVariant;
     }
 
+    public String getProductName() {
+        return productName;
+    }
+
+    public void setProductName(String productName) {
+        this.productName = productName;
+    }
+
+    public String getSize() {
+        return size;
+    }
+
+    public void setSize(String size) {
+        this.size = size;
+    }
+
     public Integer getQuantity() {
         return quantity;
     }
@@ -66,5 +92,13 @@ public class OrderDetail {
 
     public void setPrice(BigDecimal price) {
         this.price = price;
+    }
+
+    public String getNote() {
+        return note;
+    }
+
+    public void setNote(String note) {
+        this.note = note;
     }
 }

@@ -21,11 +21,9 @@ public class Product {
     @JoinColumn(name = "category_id")
     private Category category;
 
-    private String cpu;
-    private Integer ramGb;
-    private Integer storageGb;
-    private String vga;
-    private String screenSize;
+    @Column(name = "is_available")
+    private Boolean isAvailable = true;
+
     private String imageUrl;
     private Double price;
 
@@ -35,14 +33,6 @@ public class Product {
     @Transient
     @JsonIgnoreProperties("product")
     private List<ProductVariant> variants = new ArrayList<>();
-
-    public Double getPrice() {
-        return price;
-    }
-
-    public void setPrice(Double price) {
-        this.price = price;
-    }
 
     public Long getId() {
         return id;
@@ -68,44 +58,12 @@ public class Product {
         this.category = category;
     }
 
-    public String getCpu() {
-        return cpu;
+    public Boolean getIsAvailable() {
+        return isAvailable;
     }
 
-    public void setCpu(String cpu) {
-        this.cpu = cpu;
-    }
-
-    public Integer getRamGb() {
-        return ramGb;
-    }
-
-    public void setRamGb(Integer ramGb) {
-        this.ramGb = ramGb;
-    }
-
-    public Integer getStorageGb() {
-        return storageGb;
-    }
-
-    public void setStorageGb(Integer storageGb) {
-        this.storageGb = storageGb;
-    }
-
-    public String getVga() {
-        return vga;
-    }
-
-    public void setVga(String vga) {
-        this.vga = vga;
-    }
-
-    public String getScreenSize() {
-        return screenSize;
-    }
-
-    public void setScreenSize(String screenSize) {
-        this.screenSize = screenSize;
+    public void setIsAvailable(Boolean isAvailable) {
+        this.isAvailable = isAvailable;
     }
 
     public String getImageUrl() {
@@ -114,6 +72,14 @@ public class Product {
 
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public Double getPrice() {
+        return price;
+    }
+
+    public void setPrice(Double price) {
+        this.price = price;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -131,4 +97,6 @@ public class Product {
     public void setVariants(List<ProductVariant> variants) {
         this.variants = variants;
     }
+}
+
 }

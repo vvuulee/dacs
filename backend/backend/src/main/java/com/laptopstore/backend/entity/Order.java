@@ -1,6 +1,5 @@
 package com.laptopstore.backend.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
@@ -9,6 +8,11 @@ import java.util.ArrayList;
 import java.util.List;
 import org.hibernate.annotations.CreationTimestamp;
 
+/**
+ * Hóa đơn bán hàng tại quầy (Coffee POS Invoice)
+ * - Tạo trực tiếp bởi Thu ngân / Nhân viên tại quầy
+ * - Bán xong là hoàn tất, không có trạng thái giao hàng online rườm rà
+ */
 @Entity
 @Table(name = "orders")
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
@@ -18,29 +22,41 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // Nhân viên / Thu ngân tạo hóa đơn
     @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id")
     @JsonIgnoreProperties({"password", "hibernateLazyInitializer", "handler"})
-    private User user;
+    private User staff;
 
-    @OneToOne(mappedBy = "order", cascade = CascadeType.ALL)
-    @JsonIgnoreProperties({"order"})
-    private OrderReview review;
+    // Hình thức: DINE_IN (Dùng tại quán) hoặc TAKE_AWAY (Mang về)
+    @Column(nullable = false)
+    private String orderType = "DINE_IN";
 
-    private String receiverName;
-    private String receiverPhone;
-    private String shippingAddress;
+    // Số bàn nếu dùng tại quán (Ví dụ: "Bàn 01", "Bàn 02"...)
+    private String tableName;
 
-    private String status = "PENDING";
+    // Hình thức thanh toán: CASH (Tiền mặt), TRANSFER (Chuyển khoản QR), CARD (Thẻ)
+    @Column(nullable = false)
+    private String paymentMethod = "CASH";
 
-    private BigDecimal totalAmount;
+    // Ghi chú hóa đơn (Ví dụ: "Khách mang về, cho ly giấy...")
+    private String note;
 
+    // Tổng tiền thanh toán
+    @Column(nullable = false)
+    private BigDecimal totalAmount = BigDecimal.ZERO;
+
+    // Thời gian xuất hóa đơn
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createAt;
 
+    // Danh sách món trong hóa đơn
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderDetail> orderDetails = new ArrayList<>();
+
+    public Order() {
+    }
 
     public Long getId() {
         return id;
@@ -50,44 +66,44 @@ public class Order {
         this.id = id;
     }
 
-    public User getUser() {
-        return user;
+    public User getStaff() {
+        return staff;
     }
 
-    public void setUser(User user) {
-        this.user = user;
+    public void setStaff(User staff) {
+        this.staff = staff;
     }
 
-    public String getReceiverName() {
-        return receiverName;
+    public String getOrderType() {
+        return orderType;
     }
 
-    public void setReceiverName(String receiverName) {
-        this.receiverName = receiverName;
+    public void setOrderType(String orderType) {
+        this.orderType = orderType;
     }
 
-    public String getReceiverPhone() {
-        return receiverPhone;
+    public String getTableName() {
+        return tableName;
     }
 
-    public void setReceiverPhone(String receiverPhone) {
-        this.receiverPhone = receiverPhone;
+    public void setTableName(String tableName) {
+        this.tableName = tableName;
     }
 
-    public String getShippingAddress() {
-        return shippingAddress;
+    public String getPaymentMethod() {
+        return paymentMethod;
     }
 
-    public void setShippingAddress(String shippingAddress) {
-        this.shippingAddress = shippingAddress;
+    public void setPaymentMethod(String paymentMethod) {
+        this.paymentMethod = paymentMethod;
     }
 
-    public String getStatus() {
-        return status;
+    public String getNote() {
+        return note;
     }
 
-    public void setStatus(String status) {
-        this.status = status;
+    public void setNote(String note) {
+        this.note = note;
     }
 
     public BigDecimal getTotalAmount() {
@@ -112,13 +128,5 @@ public class Order {
 
     public void setOrderDetails(List<OrderDetail> orderDetails) {
         this.orderDetails = orderDetails;
-    }
-
-    public OrderReview getReview() {
-        return review;
-    }
-
-    public void setReview(OrderReview review) {
-        this.review = review;
     }
 }
