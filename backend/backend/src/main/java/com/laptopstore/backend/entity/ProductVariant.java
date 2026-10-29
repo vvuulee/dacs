@@ -26,7 +26,9 @@ public class ProductVariant {
     @Column(nullable = false)
     private BigDecimal price;
 
-    private Integer stockQuantity;
+    @Column(name = "stock_quantity")
+    private Integer stockQuantity = 100;
+
     private String imageUrl;
 
     public Long getId() {
