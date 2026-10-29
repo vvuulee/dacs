@@ -45,8 +45,9 @@ public class SecurityConfig {
                         // Khu vực Công khai: Đăng nhập, kiểm tra lỗi
                         .requestMatchers("/api/auth/**", "/error").permitAll()
 
-                        // Cho phép xem danh sách món, biến thể size, topping và danh mục
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/products/**", "/api/variants/**", "/api/toppings/**", "/api/categories/**").permitAll()
+                        // Cho phép xem danh sách món, topping, danh mục và cập nhật số lượng bánh đầu ca
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/products/**", "/api/toppings/**", "/api/categories/**").permitAll()
+                        .requestMatchers("/api/variants/**").permitAll()
 
                         // Cho phép toàn bộ hoạt động POS Bán hàng tại quầy (Tạo đơn, xem đơn, gọi thêm món, thanh toán chốt bill, xem báo cáo)
                         .requestMatchers("/api/orders/**").permitAll()

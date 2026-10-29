@@ -80,10 +80,14 @@ public class OrderService {
             ProductVariant variant = productVariantRepository.findById(itemReq.getVariantId())
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy món với mã biến thể: " + itemReq.getVariantId()));
 
-            // Trừ tồn kho nếu có quản lý
+            // Trừ tồn kho nếu có quản lý (chỉ dành cho bánh ngọt / món có quản lý stockQuantity)
             if (variant.getStockQuantity() != null) {
-                int remaining = Math.max(0, variant.getStockQuantity() - qty);
-                variant.setStockQuantity(remaining);
+                if (variant.getStockQuantity() < qty) {
+                    String itemName = (variant.getProduct() != null) ? variant.getProduct().getName() : "Món";
+                    throw new IllegalStateException("Món '" + itemName + "' (" + variant.getSize() + ") chỉ còn "
+                            + variant.getStockQuantity() + " phần trong tủ, không đủ để phục vụ số lượng " + qty + "!");
+                }
+                variant.setStockQuantity(variant.getStockQuantity() - qty);
                 productVariantRepository.save(variant);
             }
 
@@ -165,8 +169,12 @@ public class OrderService {
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy món với mã biến thể: " + itemReq.getVariantId()));
 
             if (variant.getStockQuantity() != null) {
-                int remaining = Math.max(0, variant.getStockQuantity() - qty);
-                variant.setStockQuantity(remaining);
+                if (variant.getStockQuantity() < qty) {
+                    String itemName = (variant.getProduct() != null) ? variant.getProduct().getName() : "Món";
+                    throw new IllegalStateException("Món '" + itemName + "' (" + variant.getSize() + ") chỉ còn "
+                            + variant.getStockQuantity() + " phần trong tủ, không đủ để phục vụ số lượng " + qty + "!");
+                }
+                variant.setStockQuantity(variant.getStockQuantity() - qty);
                 productVariantRepository.save(variant);
             }
 

@@ -2,13 +2,13 @@ package com.laptopstore.backend.controller;
 
 import com.laptopstore.backend.entity.ProductVariant;
 import com.laptopstore.backend.service.ProductService;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
+@CrossOrigin("*")
 @RestController
 @RequestMapping("/api/variants")
 public class ProductVariantController {
@@ -27,5 +27,16 @@ public class ProductVariantController {
     @GetMapping("/product/{productId}")
     public List<ProductVariant> getVariantsByProductId(@PathVariable Long productId) {
         return productService.getVariantsByProductId(productId);
+    }
+
+    // Nhân viên cập nhật nhanh số lượng bánh tồn kho đầu mỗi ca làm
+    @PatchMapping("/{id}/stock")
+    public ResponseEntity<?> updateStock(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        Integer stockQuantity = null;
+        if (body != null && body.containsKey("stockQuantity") && body.get("stockQuantity") != null) {
+            stockQuantity = Integer.valueOf(body.get("stockQuantity").toString());
+        }
+        ProductVariant updated = productService.updateVariantStock(id, stockQuantity);
+        return ResponseEntity.ok(updated);
     }
 }

@@ -27,7 +27,7 @@ public class ProductVariant {
     private BigDecimal price;
 
     @Column(name = "stock_quantity")
-    private Integer stockQuantity = 100;
+    private Integer stockQuantity;
 
     private String imageUrl;
 

@@ -132,12 +132,12 @@ public class ProductService {
 
     private void saveVariantsForProduct(Product product, List<ProductVariant> variants) {
         if (variants == null || variants.isEmpty()) {
-            // Nếu không truyền Size nào, tự động tạo Size M tiêu chuẩn
+            // Nếu không truyền Size nào, tự động tạo Size M tiêu chuẩn (đồ uống không quản lý stock_quantity)
             ProductVariant defaultVariant = new ProductVariant();
             defaultVariant.setProduct(product);
             defaultVariant.setSize("Size M");
             defaultVariant.setPrice(BigDecimal.valueOf(product.getPrice() != null ? product.getPrice() : 0));
-            defaultVariant.setStockQuantity(100);
+            defaultVariant.setStockQuantity(null);
             defaultVariant.setImageUrl(product.getImageUrl());
             productVariantRepository.save(defaultVariant);
             return;
@@ -150,7 +150,8 @@ public class ProductService {
             String variantSize = (v.getSize() != null && !v.getSize().isBlank()) ? v.getSize().trim() : "Size M";
 
             variantToSave.setSize(variantSize);
-            variantToSave.setStockQuantity(v.getStockQuantity() != null ? v.getStockQuantity() : 100);
+            // Giữ đúng stockQuantity (null nếu là đồ uống, có số lượng nếu là bánh ngọt)
+            variantToSave.setStockQuantity(v.getStockQuantity());
             variantToSave.setPrice(v.getPrice() != null
                     ? v.getPrice()
                     : BigDecimal.valueOf(product.getPrice() != null ? product.getPrice() : 0));
@@ -168,5 +169,14 @@ public class ProductService {
 
     public List<ProductVariant> getVariantsByProductId(Long productId) {
         return productVariantRepository.findByProductId(productId);
+    }
+
+    // Cập nhật nhanh số lượng bánh tồn kho đầu ca cho nhân viên
+    @Transactional
+    public ProductVariant updateVariantStock(Long variantId, Integer stockQuantity) {
+        ProductVariant variant = productVariantRepository.findById(variantId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy kích cỡ / món với mã: " + variantId));
+        variant.setStockQuantity(stockQuantity);
+        return productVariantRepository.save(variant);
     }
 }
