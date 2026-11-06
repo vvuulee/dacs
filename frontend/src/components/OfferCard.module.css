@@ -1,0 +1,8 @@
+.card { display: grid; gap: var(--space-2); padding: var(--space-3); border: 1px dashed var(--color-primary); border-radius: var(--radius-md); background: var(--color-surface); }
+.title { margin: 0; font-size: 1.125rem; }
+.description { margin: 0; color: var(--color-muted); }
+.code { justify-self: start; padding: var(--space-1) var(--space-3); border-radius: var(--radius-sm); background: var(--color-bg); font-size: 1.125rem; font-weight: 700; letter-spacing: 0.05em; user-select: all; }
+.meta { margin: 0; font-size: 0.875rem; color: var(--color-muted); }
+.copy { justify-self: start; padding: var(--space-2) var(--space-4); border: 0; border-radius: 999px; background: var(--color-primary); color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+.copy:hover { background: var(--color-primary-dark); }
+.status { margin: 0; color: var(--color-primary-dark); font-weight: 600; }

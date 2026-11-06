@@ -116,3 +116,4 @@ public class CustomerVoucher {
         this.expiresAt = expiresAt;
     }
 }
+

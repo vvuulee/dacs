@@ -1,0 +1,31 @@
+.layout { display: grid; grid-template-columns: 232px minmax(0, 1fr) 320px; gap: var(--space-4); align-items: start; }
+.head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.title { margin: 0; font-size: 36px; font-weight: 900; letter-spacing: -0.02em; }
+.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: 220px; grid-auto-flow: dense; gap: var(--space-3); }
+.full { grid-column: 1 / -1; grid-row: span 2; }
+
+.sidebar { position: sticky; top: 96px; padding: 12px; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface-alt); }
+.sidebarTitle { margin: 0; padding: 8px 12px 12px; font-size: 22px; font-weight: 900; }
+.voucher { display: block; margin-top: var(--space-3); padding: var(--space-3); border-radius: 20px; background: var(--color-mustard); color: var(--color-text); text-decoration: none; }
+.voucher:hover { background: #ffd31a; }
+.voucherCode { display: block; font-weight: 900; letter-spacing: 0.05em; }
+.voucherText { display: block; margin-top: 4px; font-size: 13px; }
+
+.cart, .cartOpen { position: sticky; top: 96px; }
+.drawerToggle, .drawerClose { display: none; align-items: center; gap: var(--space-2); height: 44px; padding: 0 var(--space-3); border: 1px solid var(--color-primary); border-radius: var(--radius-pill); background: var(--color-surface); color: var(--color-primary-dark); font: inherit; font-weight: 600; cursor: pointer; }
+
+/* 1024–1199px: cột giỏ thu thành ngăn kéo */
+@media (max-width: 1199px) {
+  .layout { grid-template-columns: 220px minmax(0, 1fr); }
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .drawerToggle, .drawerClose { display: inline-flex; }
+  .cart, .cartOpen {
+    position: fixed; top: 0; right: 0; bottom: 0; z-index: 15; width: 360px; padding: var(--space-3);
+    overflow: auto; background: var(--color-bg); box-shadow: -8px 0 24px rgb(59 42 30 / 0.18);
+    transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0.25s;
+  }
+  .cart { transform: translateX(100%); visibility: hidden; }
+  .cartOpen { transform: none; visibility: visible; }
+  .drawerClose { margin-bottom: var(--space-2); }
+}
+@media (prefers-reduced-motion: reduce) { .cart, .cartOpen { transition: none; } }

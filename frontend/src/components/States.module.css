@@ -1,0 +1,14 @@
+.box { padding: var(--space-5) var(--space-4); text-align: center; }
+.title { margin: 0 0 var(--space-2); font-size: 1.125rem; font-weight: 600; }
+.hint { margin: 0 0 var(--space-3); color: var(--color-muted); }
+.button {
+  padding: var(--space-2) var(--space-4); border: 0; border-radius: var(--radius-sm);
+  background: var(--color-primary); color: #fff; font: inherit; font-weight: 600; cursor: pointer;
+}
+.button:hover { background: var(--color-primary-dark); }
+.skeleton {
+  border-radius: var(--radius-sm); background: linear-gradient(90deg, #f1e7da 25%, #f8f0e6 50%, #f1e7da 75%);
+  background-size: 200% 100%; animation: shimmer 1.4s linear infinite;
+}
+@keyframes shimmer { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }

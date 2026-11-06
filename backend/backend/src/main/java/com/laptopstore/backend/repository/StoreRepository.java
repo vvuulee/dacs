@@ -11,3 +11,4 @@ public interface StoreRepository extends JpaRepository<Store, Long> {
     List<Store> findByProvinceNameContainingIgnoreCase(String province);
     List<Store> findByNameContainingIgnoreCaseOrStreetContainingIgnoreCase(String name, String street);
 }
+

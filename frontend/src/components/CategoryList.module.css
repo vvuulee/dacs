@@ -1,0 +1,9 @@
+.list { display: grid; gap: var(--space-1); margin: 0; padding: 0; list-style: none; }
+.link { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); height: 48px; padding: 0 var(--space-3); border-radius: var(--radius-pill); color: inherit; font-size: 15px; font-weight: 600; text-decoration: none; }
+.link:hover { background: var(--color-bg); }
+.link[aria-current='true'] { background: var(--color-text); color: var(--color-bg); }
+.link[aria-current='true'] .icon { color: var(--color-mustard); }
+.label { display: flex; align-items: center; gap: 12px; white-space: nowrap; }
+.icon { color: var(--color-primary-dark); }
+.count { color: var(--color-muted); font-size: 13px; }
+.link[aria-current='true'] .count { color: rgb(255 250 243 / 0.7); }

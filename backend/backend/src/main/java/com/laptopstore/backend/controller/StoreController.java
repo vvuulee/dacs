@@ -70,3 +70,4 @@ public class StoreController {
         return ResponseEntity.noContent().build();
     }
 }
+

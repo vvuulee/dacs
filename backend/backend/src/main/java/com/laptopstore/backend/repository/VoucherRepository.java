@@ -13,3 +13,4 @@ public interface VoucherRepository extends JpaRepository<Voucher, Long> {
     Optional<Voucher> findByCodeIgnoreCase(String code);
     List<Voucher> findByIsActiveTrue();
 }
+

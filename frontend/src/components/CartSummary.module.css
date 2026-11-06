@@ -1,0 +1,2 @@
+.summary { display: flex; justify-content: space-between; margin: var(--space-3) 0; font-size: 1.125rem; font-weight: 700; }
+.summary dd { margin: 0; color: var(--color-primary-dark); }

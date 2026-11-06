@@ -1,0 +1,47 @@
+/* Dùng chung */
+.price { color: var(--color-primary-dark); font-weight: 700; }
+.name { overflow: hidden; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.desc { display: block; margin-top: 2px; color: var(--color-muted); font-size: 14px; line-height: 1.45; }
+.addRound { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--color-primary); color: var(--color-text); transition: background 0.15s; }
+.addPill { display: flex; align-items: center; gap: 6px; height: 40px; padding: 0 var(--space-3); border-radius: var(--radius-pill); background: var(--color-primary); color: var(--color-text); font-size: 14px; font-weight: 700; transition: background 0.15s; }
+a:hover .addRound, a:hover .addPill { background: var(--color-primary-dark); }
+
+/* Trang chủ: ảnh lớn + nhãn giá chồng góc */
+.peek { position: relative; display: block; color: inherit; text-decoration: none; animation: rise-in 0.5s ease-out both; }
+.peekPhoto { display: block; height: 280px; overflow: hidden; border-radius: var(--radius-lg); background: var(--color-well); }
+.peekPhoto img { transition: transform 0.4s ease; }
+.peek:hover .peekPhoto img { transform: scale(1.04); }
+.peekTag { position: absolute; top: 228px; right: -6px; z-index: 1; display: flex; align-items: center; gap: 12px; padding: 6px 6px 6px var(--space-3); border-radius: var(--radius-pill); background: var(--color-bg); box-shadow: var(--shadow-lift); }
+.peekTag .addRound { width: 36px; height: 36px; }
+.peekName { display: block; margin-top: var(--space-3); font-size: 17px; font-weight: 700; }
+.peekDesc { display: block; color: var(--color-muted); font-size: 14px; }
+
+/* Menu: ô lưới */
+.tile { display: flex; flex-direction: column; min-width: 0; padding: 12px; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--shadow-lift); color: inherit; text-decoration: none; animation: rise-in 0.45s ease-out both; transition: border-color 0.15s; }
+.tile:hover { border-color: var(--color-primary); }
+.photo { display: block; flex: 1; min-height: 0; overflow: hidden; border-radius: 18px; }
+.tileBody { display: flex; flex-direction: column; padding: 12px 4px 0; }
+
+.feature { position: relative; grid-column: span 2; grid-row: span 2; overflow: hidden; border-radius: var(--radius-lg); background: var(--color-well); color: inherit; text-decoration: none; animation: rise-in 0.45s ease-out both; }
+.featureImg { position: absolute; inset: 0; object-position: 65% 50%; }
+.featureCard { position: absolute; left: 20px; bottom: 20px; width: 300px; padding: 20px; border-radius: 22px; background: var(--color-bg); }
+.featureName { display: block; font-size: 24px; font-weight: 900; line-height: 1.15; }
+.featureRow { display: flex; align-items: center; justify-content: space-between; margin-top: var(--space-3); }
+.featurePrice { color: var(--color-primary-dark); font-size: 20px; font-weight: 700; }
+
+.tall { grid-row: span 2; border-color: transparent; background: var(--color-mustard); }
+.tallBody { padding: var(--space-3) 8px 8px; }
+.tallName { display: block; font-size: 20px; font-weight: 900; }
+.tallDesc { display: block; color: rgb(59 42 30 / 0.75); font-size: 14px; }
+.tallPrice { font-size: 18px; font-weight: 700; }
+
+.wide { grid-column: span 2; flex-direction: row; gap: var(--space-3); }
+.widePhoto { display: block; width: 46%; overflow: hidden; border-radius: 18px; }
+.wideBody { display: flex; flex: 1; flex-direction: column; justify-content: space-between; padding: 12px 12px 12px 0; }
+
+.soldOutTile { justify-content: space-between; padding: var(--space-3); border-style: dashed; background: var(--color-surface-alt); box-shadow: none; color: var(--color-muted); }
+.soldOutTile:hover { border-color: var(--color-border); }
+.soldOutHead { display: flex; align-items: center; justify-content: space-between; font-size: 26px; }
+.soldOut { padding: 4px 12px; border-radius: var(--radius-pill); background: var(--color-text); color: var(--color-bg); font-size: 12px; font-weight: 600; }
+.soldOutBody .name { white-space: normal; }
+.mutedPrice { display: block; margin-top: 4px; font-weight: 600; }

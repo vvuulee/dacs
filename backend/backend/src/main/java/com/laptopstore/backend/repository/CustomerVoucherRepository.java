@@ -13,3 +13,4 @@ public interface CustomerVoucherRepository extends JpaRepository<CustomerVoucher
     Optional<CustomerVoucher> findByCustomerPhoneAndVoucherCodeIgnoreCaseAndIsUsedFalse(String customerPhone, String voucherCode);
     Optional<CustomerVoucher> findByVoucherCodeIgnoreCaseAndIsUsedFalse(String voucherCode);
 }
+

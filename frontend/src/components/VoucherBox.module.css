@@ -1,0 +1,14 @@
+.box { margin-top: var(--space-4); }
+.form { display: flex; align-items: flex-end; gap: var(--space-2); }
+.form > :first-child { flex: 1; margin-bottom: 0; }
+.form input { letter-spacing: 0.05em; text-transform: uppercase; }
+.form input::placeholder { letter-spacing: normal; text-transform: none; }
+.apply { height: 56px; padding: 0 20px; border: 0; border-radius: var(--radius-pill); background: var(--color-text); color: var(--color-bg); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+.apply:hover:not(:disabled) { background: #2a1d14; }
+.apply:disabled { opacity: 0.6; cursor: not-allowed; }
+.error { margin: var(--space-2) 0 0; color: var(--color-danger); font-size: 0.875rem; }
+.notice { margin: var(--space-2) 0 0; padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); background: var(--color-primary-soft); color: var(--color-primary-dark); font-size: 14px; }
+.applied { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); margin-top: 12px; padding: 6px 6px 6px var(--space-3); border-radius: var(--radius-pill); background: var(--color-mustard); }
+.appliedText { margin: 0; font-size: 14px; font-weight: 700; }
+.remove { height: 32px; padding: 0 12px; border: 0; border-radius: var(--radius-pill); background: rgb(255 255 255 / 0.6); color: var(--color-text); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.remove:hover { background: #fff; }

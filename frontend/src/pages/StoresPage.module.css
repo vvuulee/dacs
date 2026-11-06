@@ -1,0 +1,2 @@
+.filters { display: grid; grid-template-columns: 240px minmax(240px, 360px); gap: var(--space-3); margin-bottom: var(--space-3); }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--space-3); }

@@ -1,10 +1,18 @@
-# Chặn các thư mục nặng của Frontend (ReactJS)
+# Frontend (React + Vite)
 **/node_modules/
 **/build/
-.env
+**/dist/
+**/.env
+**/.env.local
 
-# Chặn các thư mục dịch của Backend (Spring Boot)
+# Backend (Spring Boot / Maven)
 **/target/
 **/.idea/
 **/*.iml
 **/.mvn/
+*.log
+*.zip
+
+# System files
+.DS_Store
+Thumbs.db

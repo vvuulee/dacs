@@ -95,3 +95,4 @@ public class Store {
         this.openingHours = openingHours;
     }
 }
+

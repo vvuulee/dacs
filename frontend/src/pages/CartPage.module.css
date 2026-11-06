@@ -1,0 +1,5 @@
+.list { max-width: 720px; margin: 0; padding: 0; list-style: none; }
+.footer { max-width: 720px; }
+.center { text-align: center; }
+.checkout { display: block; padding: var(--space-3); border-radius: 999px; background: var(--color-primary); color: #fff; font-weight: 700; text-align: center; text-decoration: none; }
+.hint { max-width: 720px; margin: var(--space-3) 0; color: var(--color-muted); }

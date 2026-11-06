@@ -1,0 +1,13 @@
+.group { display: grid; gap: 12px; margin: 0; padding: 0; border: 0; }
+.option { position: relative; }
+.label { display: flex; align-items: center; gap: var(--space-3); height: 64px; padding: 0 24px 0 12px; border: 1px solid var(--color-border); border-radius: var(--radius-pill); background: var(--color-surface); cursor: pointer; }
+.label:hover { border-color: var(--color-primary); }
+.icon { display: grid; place-items: center; flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; background: var(--color-surface-alt); font-size: 18px; }
+.text { flex: 1; font-weight: 600; }
+.radio { width: 24px; height: 24px; border: 2px solid var(--color-border); border-radius: 50%; background: var(--color-surface); }
+.label:has(input:checked) { border: 2px solid var(--color-primary); background: var(--color-primary-soft); }
+.label:has(input:checked) .icon { background: var(--color-primary); }
+.label:has(input:checked) .radio { border: 7px solid var(--color-primary); }
+.label:has(input:focus-visible) { outline: 3px solid var(--color-primary-dark); outline-offset: 2px; }
+.hint { position: absolute; top: 50%; right: 64px; color: var(--color-muted); font-size: 13px; transform: translateY(-50%); pointer-events: none; }
+.error { margin: 0; color: var(--color-danger); font-size: 0.875rem; }

@@ -1,0 +1,40 @@
+export const MIN_QTY = 1;
+export const MAX_QTY = 99;
+export const NOTE_MAX_LENGTH = 200;
+export const SEARCH_DEBOUNCE_MS = 300;
+export const MOCK_LATENCY_MS = 300;
+export const FEATURED_COUNT = 8;
+export const CART_STORAGE_KEY = 'coffee-web:cart';
+export const CART_STORAGE_VERSION = 1;
+
+export const PAYMENT_TTL_MS = 300000;
+export const STEP_PLACED_MS = 15000;
+export const STEP_PREPARING_MS = 30000;
+export const STEP_DELIVERING_MS = 45000;
+export const MOCK_DELIVERY_FEE = 15000;
+export const POLL_INTERVAL_MS = 5000;
+export const RECENT_ORDERS_MAX = 10;
+export const RECENT_ORDERS_VERSION = 1;
+export const RECENT_ORDERS_KEY = 'coffee-web:recent-orders';
+export const MOCK_ORDERS_KEY = 'coffee-web:mock-orders';
+export const NAME_MIN = 2;
+export const NAME_MAX = 60;
+export const STREET_MIN = 5;
+export const STREET_MAX = 120;
+
+export const SESSION_KEY = 'coffee-web:session';
+export const SESSION_VERSION = 1;
+export const MOCK_USERS_KEY = 'coffee-web:mock-users';
+export const MOCK_SESSIONS_KEY = 'coffee-web:mock-sessions';
+export const MOCK_RESETS_KEY = 'coffee-web:mock-resets';
+export const MOCK_SESSION_TTL_MS = 86400000;
+export const MOCK_RESET_TTL_MS = 900000;
+export const PASSWORD_MIN = 8;
+export const PASSWORD_MAX = 128;
+export const EMAIL_MAX = 254;
+export const MY_ORDERS_MAX = 50;
+
+export const VOUCHER_CODE_MIN = 3;
+export const VOUCHER_CODE_MAX = 32;
+export const ERROR_MESSAGE_MAX = 300;
+export const VOUCHER_INVALID_CODE = 'voucher_invalid';

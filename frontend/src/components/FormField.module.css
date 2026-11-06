@@ -1,0 +1,16 @@
+.field { display: grid; gap: var(--space-2); margin-bottom: var(--space-3); }
+.label { font-size: 14px; font-weight: 700; }
+.field input, .field select, .field textarea {
+  width: 100%; height: 56px; padding: 0 22px; border: 1px solid var(--color-border); border-radius: var(--radius-pill);
+  background: var(--color-surface); color: inherit; font: inherit; font-size: 15px;
+}
+.field select {
+  appearance: none; padding-right: 48px; cursor: pointer;
+  background: var(--color-surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%237a6a5c' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 22px center;
+}
+.field textarea { height: auto; min-height: 104px; padding: var(--space-3) 22px; border-radius: var(--radius-lg); resize: vertical; }
+.field input::placeholder, .field textarea::placeholder { color: var(--color-muted); }
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--color-primary); outline: none; box-shadow: 0 0 0 3px rgb(251 141 23 / 0.2); }
+.field [aria-invalid='true'] { border-color: var(--color-danger); }
+.field select:disabled { background-color: var(--color-bg); color: var(--color-muted); cursor: not-allowed; }
+.error { margin: 0; padding-left: 22px; color: var(--color-danger); font-size: 0.875rem; }
