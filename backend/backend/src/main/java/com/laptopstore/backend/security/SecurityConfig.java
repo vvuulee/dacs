@@ -31,10 +31,10 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // 1. Mở cổng CORS cho Frontend (React/Vue)
+                // 1. Mở cổng CORS cho Frontend (React/Vue/Vite: 3000 & 5173)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
-                // 2. Tắt CSRF (vì dùng Token nên không cần bảo vệ CSRF kiểu cũ)
+                // 2. Tắt CSRF (vì dùng Token Stateless)
                 .csrf(AbstractHttpConfigurer::disable)
 
                 // 3. Cài đặt không lưu phiên làm việc (Stateless)
@@ -42,20 +42,29 @@ public class SecurityConfig {
 
                 // 4. Phân quyền đường dẫn
                 .authorizeHttpRequests(auth -> auth
-                        // Khu vực Công khai: Đăng nhập, kiểm tra lỗi
+                        // Khu vực Công khai: Đăng ký, Đăng nhập, kiểm tra lỗi
                         .requestMatchers("/api/auth/**", "/error").permitAll()
 
-                        // Cho phép xem danh sách món, topping, danh mục và cập nhật số lượng bánh đầu ca
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/products/**", "/api/toppings/**", "/api/categories/**").permitAll()
-                        .requestMatchers("/api/variants/**").permitAll()
+                        // Công khai menu, chi nhánh cửa hàng, voucher ưu đãi, danh mục, kích cỡ và địa chỉ giao hàng
+                        .requestMatchers(org.springframework.http.HttpMethod.GET,
+                                "/api/products/**",
+                                "/api/toppings/**",
+                                "/api/categories/**",
+                                "/api/stores/**",
+                                "/api/offers/**",
+                                "/api/provinces/**").permitAll()
 
-                        // Cho phép toàn bộ hoạt động POS Bán hàng tại quầy (Tạo đơn, xem đơn, gọi thêm món, thanh toán chốt bill, xem báo cáo)
+                        .requestMatchers("/api/variants/**").permitAll()
+                        .requestMatchers("/api/vouchers/validate").permitAll()
+                        .requestMatchers("/api/vouchers/customer/**").permitAll()
+
+                        // Cho phép toàn bộ hoạt động POS Bán hàng & Đặt hàng Online
                         .requestMatchers("/api/orders/**").permitAll()
 
                         // Cho phép kiểm kê nguyên nhiên liệu cuối ca tại quầy POS
                         .requestMatchers("/api/ingredients/**").permitAll()
 
-                        // Các API còn lại (Quản trị nhân viên, đổi mật khẩu profile...): Yêu cầu Token
+                        // Các API còn lại (Trang cá nhân /api/me, Quản trị /api/users, Tạo voucher /api/vouchers...): Yêu cầu Token
                         .anyRequest().authenticated());
 
         // 5. Bộ lọc JWT
@@ -77,8 +86,8 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000"));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedOriginPatterns(List.of("http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:*"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Cache-Control", "Content-Type"));
         configuration.setAllowCredentials(true);
 

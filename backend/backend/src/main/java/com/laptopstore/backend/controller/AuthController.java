@@ -1,6 +1,5 @@
 package com.laptopstore.backend.controller;
 
-import com.laptopstore.backend.dto.JwtResponse;
 import com.laptopstore.backend.dto.LoginRequest;
 import com.laptopstore.backend.dto.SignupRequest;
 import com.laptopstore.backend.service.AuthService;
@@ -8,6 +7,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @CrossOrigin("*")
 @RestController
@@ -21,30 +22,41 @@ public class AuthController {
     }
 
     /**
-     * Chặn đăng ký tài khoản tự do trên web
-     * Vì ứng dụng đã chuyển thành phần mềm POS quản lý quán Cà phê nội bộ,
-     * chỉ dành riêng cho Admin (Chủ quán) và Staff (Nhân viên).
+     * Đăng ký tài khoản Khách hàng mua online (Coffee Web)
      */
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody SignupRequest signUpRequest) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body("Hệ thống chỉ dành cho nội bộ nhân viên và quản lý quán cà phê. Vui lòng liên hệ Quản trị viên để được cấp tài khoản!");
+        try {
+            Map<String, Object> response = authService.registerCustomer(signUpRequest);
+            return new ResponseEntity<>(response, HttpStatus.CREATED);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", e.getMessage()));
+        }
     }
 
     /**
-     * Đăng nhập hệ thống POS dành cho Quản lý & Nhân viên
+     * Đăng nhập hệ thống (Áp dụng cho Quản lý, Nhân viên quầy và Khách hàng online)
      */
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
         try {
-            JwtResponse response = authService.authenticateUser(loginRequest);
+            Map<String, Object> response = authService.authenticateUser(loginRequest);
             return ResponseEntity.ok(response);
         } catch (BadCredentialsException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("Sai tên đăng nhập hoặc mật khẩu!");
+                    .body(Map.of("message", "Sai tên đăng nhập hoặc mật khẩu!"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("Đăng nhập thất bại: " + e.getMessage());
+                    .body(Map.of("message", "Đăng nhập thất bại: " + e.getMessage()));
         }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout() {
+        return ResponseEntity.noContent().build();
     }
 }

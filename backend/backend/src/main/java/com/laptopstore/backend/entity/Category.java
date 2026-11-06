@@ -12,11 +12,14 @@ public class Category {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false,length = 100)
-    private String  name;
+    @Column(nullable = false, length = 100)
+    private String name;
 
     @Column(columnDefinition = "TEXT")
     private String description;
+
+    @Column(length = 500)
+    private String image;
 
     public Long getId() {
         return id;
@@ -40,5 +43,13 @@ public class Category {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getImage() {
+        return image;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
     }
 }

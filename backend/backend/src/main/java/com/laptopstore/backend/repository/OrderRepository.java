@@ -42,6 +42,38 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     })
     List<Order> findByStatusOrderByIdDesc(String status);
 
+    @EntityGraph(attributePaths = {
+            "orderDetails",
+            "orderDetails.productVariant",
+            "orderDetails.productVariant.product",
+            "orderDetails.productVariant.product.category",
+            "orderDetails.toppings",
+            "staff"
+    })
+    List<Order> findByCustomerPhoneOrderByIdDesc(String phone);
+
+    @EntityGraph(attributePaths = {
+            "orderDetails",
+            "orderDetails.productVariant",
+            "orderDetails.productVariant.product",
+            "orderDetails.productVariant.product.category",
+            "orderDetails.toppings",
+            "staff"
+    })
+    List<Order> findByStaffIdOrderByIdDesc(Long userId);
+
+    @EntityGraph(attributePaths = {
+            "orderDetails",
+            "orderDetails.productVariant",
+            "orderDetails.productVariant.product",
+            "orderDetails.productVariant.product.category",
+            "orderDetails.toppings",
+            "staff"
+    })
+    Optional<Order> findByIdAndCustomerPhone(Long id, String phone);
+
+    Optional<Order> findByClientRequestId(String clientRequestId);
+
     List<Order> findByCreateAtBetweenOrderByIdDesc(LocalDateTime start, LocalDateTime end);
 
     List<Order> findByStatusAndCreateAtBetweenOrderByIdDesc(String status, LocalDateTime start, LocalDateTime end);

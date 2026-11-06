@@ -1,13 +1,22 @@
 package com.laptopstore.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import java.util.ArrayList;
 import java.util.List;
 
 public class PosOrderItemRequest {
+
+    @JsonAlias({"variantId", "variant_id", "size_id", "sizeId"})
     private Long variantId;
+
+    @JsonAlias({"productId", "product_id"})
+    private Long productId;
+
     private Integer quantity;
     private String note; // Ví dụ: "70% đường, ít đá"
-    private List<Long> toppingIds = new ArrayList<>(); // Danh sách ID các topping chọn thêm cho ly này
+
+    @JsonAlias({"toppingIds", "topping_ids"})
+    private List<Long> toppingIds = new ArrayList<>();
 
     public PosOrderItemRequest() {
     }
@@ -31,6 +40,14 @@ public class PosOrderItemRequest {
 
     public void setVariantId(Long variantId) {
         this.variantId = variantId;
+    }
+
+    public Long getProductId() {
+        return productId;
+    }
+
+    public void setProductId(Long productId) {
+        this.productId = productId;
     }
 
     public Integer getQuantity() {

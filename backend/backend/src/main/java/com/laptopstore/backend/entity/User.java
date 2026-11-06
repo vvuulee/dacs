@@ -13,7 +13,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false,unique = true)
+    @Column(nullable = false, unique = true)
     private String username;
 
     @JsonIgnore
@@ -24,13 +24,19 @@ public class User {
     private String email;
 
     private String fullName;
+
+    @Column(unique = true)
     private String phone;
+
     private String address;
 
     @Column(nullable = false)
-    private String role = "ROLE_USER";
+    private String role = "ROLE_CUSTOMER";
 
-    @Column(insertable = false,updatable = false)
+    @Column(name = "order_count", nullable = false)
+    private Integer orderCount = 0;
+
+    @Column(insertable = false, updatable = false)
     private LocalDateTime createAt;
 
     public Long getId() {
@@ -95,6 +101,14 @@ public class User {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public Integer getOrderCount() {
+        return orderCount != null ? orderCount : 0;
+    }
+
+    public void setOrderCount(Integer orderCount) {
+        this.orderCount = orderCount != null ? orderCount : 0;
     }
 
     public LocalDateTime getCreateAt() {

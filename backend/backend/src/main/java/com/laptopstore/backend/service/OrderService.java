@@ -2,12 +2,14 @@ package com.laptopstore.backend.service;
 
 import com.laptopstore.backend.dto.PosOrderItemRequest;
 import com.laptopstore.backend.dto.PosOrderRequest;
+import com.laptopstore.backend.entity.CustomerVoucher;
 import com.laptopstore.backend.entity.Order;
 import com.laptopstore.backend.entity.OrderDetail;
 import com.laptopstore.backend.entity.OrderDetailTopping;
 import com.laptopstore.backend.entity.ProductVariant;
 import com.laptopstore.backend.entity.Topping;
 import com.laptopstore.backend.entity.User;
+import com.laptopstore.backend.repository.CustomerVoucherRepository;
 import com.laptopstore.backend.repository.OrderDetailRepository;
 import com.laptopstore.backend.repository.OrderRepository;
 import com.laptopstore.backend.repository.ProductVariantRepository;
@@ -30,45 +32,76 @@ public class OrderService {
     private final ProductVariantRepository productVariantRepository;
     private final UserRepository userRepository;
     private final ToppingRepository toppingRepository;
+    private final VoucherService voucherService;
+    private final CustomerVoucherRepository customerVoucherRepository;
 
     public OrderService(OrderRepository orderRepository,
                         OrderDetailRepository orderDetailRepository,
                         ProductVariantRepository productVariantRepository,
                         UserRepository userRepository,
-                        ToppingRepository toppingRepository) {
+                        ToppingRepository toppingRepository,
+                        VoucherService voucherService,
+                        CustomerVoucherRepository customerVoucherRepository) {
         this.orderRepository = orderRepository;
         this.orderDetailRepository = orderDetailRepository;
         this.productVariantRepository = productVariantRepository;
         this.userRepository = userRepository;
         this.toppingRepository = toppingRepository;
+        this.voucherService = voucherService;
+        this.customerVoucherRepository = customerVoucherRepository;
     }
 
-    // 1. Tạo hóa đơn bán hàng tại quầy (POS Order)
+    // 1. Tạo đơn hàng Đa Kênh (Bán tại quầy POS & Đặt Online giao tận nhà)
     @Transactional
     public Order createPosOrder(Long staffUserId, PosOrderRequest request) {
         if (request.getItems() == null || request.getItems().isEmpty()) {
             throw new IllegalArgumentException("Hóa đơn phải có ít nhất 1 món đồ uống / bánh ngọt!");
         }
 
-        User staff = null;
+        // Kiểm tra client_request_id để tránh tạo đơn trùng khi bấm đặt 2 lần trên web
+        if (request.getClientRequestId() != null && !request.getClientRequestId().isBlank()) {
+            Optional<Order> existingOrder = orderRepository.findByClientRequestId(request.getClientRequestId().trim());
+            if (existingOrder.isPresent()) {
+                return existingOrder.get();
+            }
+        }
+
+        User staffOrCustomer = null;
         if (staffUserId != null) {
-            staff = userRepository.findById(staffUserId).orElse(null);
+            staffOrCustomer = userRepository.findById(staffUserId).orElse(null);
         }
 
         Order order = new Order();
-        order.setStaff(staff);
-        order.setOrderType(request.getOrderType() != null && !request.getOrderType().isBlank() ? request.getOrderType() : "DINE_IN");
+        order.setClientRequestId(request.getClientRequestId());
+        order.setStaff(staffOrCustomer);
+        order.setCustomerName(request.getCustomerName());
+        order.setCustomerPhone(request.getCustomerPhone());
+        order.setDeliveryAddress(request.getDeliveryAddress());
+
+        String orderType = request.getOrderType() != null && !request.getOrderType().isBlank()
+                ? request.getOrderType().toUpperCase()
+                : (request.getDeliveryAddress() != null ? "DELIVERY" : "DINE_IN");
+        order.setOrderType(orderType);
         order.setTableName(request.getTableName());
 
         String status = (request.getStatus() != null && !request.getStatus().isBlank())
-                ? request.getStatus().trim().toUpperCase()
-                : "PAID";
+                ? request.getStatus().trim()
+                : ("DELIVERY".equalsIgnoreCase(orderType) ? "placed" : "PAID");
         order.setStatus(status);
 
-        order.setPaymentMethod(request.getPaymentMethod() != null && !request.getPaymentMethod().isBlank() ? request.getPaymentMethod() : "CASH");
+        String paymentMethod = (request.getPaymentMethod() != null && !request.getPaymentMethod().isBlank())
+                ? request.getPaymentMethod().trim()
+                : "cash";
+        order.setPaymentMethod(paymentMethod);
+
+        String paymentStatus = (request.getPaymentStatus() != null && !request.getPaymentStatus().isBlank())
+                ? request.getPaymentStatus().trim()
+                : ("PAID".equalsIgnoreCase(status) ? "paid" : "unpaid");
+        order.setPaymentStatus(paymentStatus);
+
         order.setNote(request.getNote());
 
-        BigDecimal totalAmount = BigDecimal.ZERO;
+        BigDecimal subtotal = BigDecimal.ZERO;
         List<OrderDetail> detailList = new ArrayList<>();
 
         for (PosOrderItemRequest itemReq : request.getItems()) {
@@ -80,7 +113,7 @@ public class OrderService {
             ProductVariant variant = productVariantRepository.findById(itemReq.getVariantId())
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy món với mã biến thể: " + itemReq.getVariantId()));
 
-            // Trừ tồn kho nếu có quản lý (chỉ dành cho bánh ngọt / món có quản lý stockQuantity)
+            // Kiểm tra tồn kho nếu là Bánh ngọt
             if (variant.getStockQuantity() != null) {
                 if (variant.getStockQuantity() < qty) {
                     String itemName = (variant.getProduct() != null) ? variant.getProduct().getName() : "Món";
@@ -126,30 +159,69 @@ public class OrderService {
                 }
             }
 
-            totalAmount = totalAmount.add(itemTotal);
+            subtotal = subtotal.add(itemTotal);
             detailList.add(detail);
         }
 
+        // Phí giao hàng (nếu là giao hàng online thì tính 15.000đ)
+        BigDecimal deliveryFee = "DELIVERY".equalsIgnoreCase(orderType) ? BigDecimal.valueOf(15000) : BigDecimal.ZERO;
+
+        // Xử lý Voucher giảm giá
+        BigDecimal discount = BigDecimal.ZERO;
+        String voucherCode = request.getVoucherCode();
+        if (voucherCode != null && !voucherCode.isBlank()) {
+            Map<String, Object> vResult = voucherService.validateVoucher(voucherCode, subtotal, request.getCustomerPhone());
+            if (Boolean.TRUE.equals(vResult.get("valid"))) {
+                Integer discInt = (Integer) vResult.get("discount");
+                discount = BigDecimal.valueOf(discInt != null ? discInt : 0);
+                voucherService.markCustomerVoucherUsed(voucherCode, request.getCustomerPhone());
+                order.setVoucherCode(voucherCode.trim().toUpperCase());
+            }
+        }
+
+        BigDecimal totalAmount = subtotal.add(deliveryFee).subtract(discount);
+        if (totalAmount.compareTo(BigDecimal.ZERO) < 0) {
+            totalAmount = BigDecimal.ZERO;
+        }
+
+        order.setSubtotal(subtotal);
+        order.setDeliveryFee(deliveryFee);
+        order.setDiscount(discount);
         order.setTotalAmount(totalAmount);
         order.setOrderDetails(detailList);
 
-        return orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
+
+        // Nếu đơn đã thanh toán hoặc đã giao -> Tự động tích lũy điểm theo SĐT
+        if ("PAID".equalsIgnoreCase(status) || "delivered".equalsIgnoreCase(status)) {
+            processLoyaltyPoints(order.getCustomerPhone());
+        }
+
+        return savedOrder;
     }
 
     // 2. Lấy danh sách hóa đơn
     public List<Order> getAllOrders(String status) {
         if (status != null && !status.isBlank()) {
-            return orderRepository.findByStatusOrderByIdDesc(status.trim().toUpperCase());
+            return orderRepository.findByStatusOrderByIdDesc(status.trim());
         }
         return orderRepository.findAllByOrderByIdDesc();
     }
 
-    // 3. Lấy chi tiết 1 hóa đơn
-    public Optional<Order> getOrderById(Long id) {
+    // 3. Lấy chi tiết 1 hóa đơn (Có hỗ trợ bảo mật SĐT cho tra cứu trên web)
+    public Optional<Order> getOrderById(Long id, String phone) {
+        if (phone != null && !phone.isBlank()) {
+            return orderRepository.findByIdAndCustomerPhone(id, phone.trim());
+        }
         return orderRepository.findWithDetailsById(id);
     }
 
-    // 4. Khách gọi thêm món vào bàn đang ngồi
+    // 4. Lấy lịch sử đơn hàng của tài khoản khách
+    public List<Order> getOrdersByUserId(Long userId) {
+        return orderRepository.findByStaffIdOrderByIdDesc(userId);
+    }
+
+    // 5. Khách gọi thêm món vào bàn đang ngồi
     @Transactional
     public Order addItemsToOrder(Long id, List<PosOrderItemRequest> newItems) {
         if (newItems == null || newItems.isEmpty()) {
@@ -216,11 +288,12 @@ public class OrderService {
             order.getOrderDetails().add(detail);
         }
 
+        order.setSubtotal(order.getSubtotal().add(addedAmount));
         order.setTotalAmount(order.getTotalAmount().add(addedAmount));
         return orderRepository.save(order);
     }
 
-    // 5. Thanh toán chốt hóa đơn cho bàn
+    // 6. Thanh toán chốt hóa đơn cho bàn
     @Transactional
     public Order payOrder(Long id, String paymentMethod) {
         Order order = orderRepository.findById(id)
@@ -231,14 +304,76 @@ public class OrderService {
         }
 
         order.setStatus("PAID");
+        order.setPaymentStatus("paid");
         if (paymentMethod != null && !paymentMethod.isBlank()) {
-            order.setPaymentMethod(paymentMethod.trim().toUpperCase());
+            order.setPaymentMethod(paymentMethod.trim());
         }
 
-        return orderRepository.save(order);
+        Order saved = orderRepository.save(order);
+        processLoyaltyPoints(saved.getCustomerPhone());
+        return saved;
     }
 
-    // 6. Báo cáo nhanh bán hàng trong ngày hôm nay
+    // 7. Cập nhật trạng thái đơn hàng (Dành cho Online Order: placed -> preparing -> delivering -> delivered)
+    @Transactional
+    public Order updateOrderStatus(Long id, String newStatus) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("Không tìm thấy hóa đơn với mã: " + id));
+
+        order.setStatus(newStatus.trim());
+        if ("delivered".equalsIgnoreCase(newStatus)) {
+            order.setPaymentStatus("paid");
+        }
+
+        Order saved = orderRepository.save(order);
+
+        if ("delivered".equalsIgnoreCase(newStatus) || "PAID".equalsIgnoreCase(newStatus)) {
+            processLoyaltyPoints(saved.getCustomerPhone());
+        }
+
+        return saved;
+    }
+
+    // 8. Cơ chế tích điểm hợp nhất qua Số Điện Thoại (Bất kể mua On hay Off, cứ đủ 50 đơn tặng 1 Voucher)
+    @Transactional
+    public void processLoyaltyPoints(String customerPhone) {
+        if (customerPhone == null || customerPhone.isBlank()) return;
+        String phone = customerPhone.trim();
+
+        // Tìm tài khoản theo SĐT, nếu chưa có thì tự động tạo tài khoản thành viên cho SĐT này
+        User user = userRepository.findByPhone(phone).orElseGet(() -> {
+            User newUser = new User();
+            newUser.setUsername("kh_" + phone);
+            newUser.setPassword("$2a$10$BM/pG5g9tDuWvREVkVzz5ujM3dH21xW20is6GNyDd0uelQ5Cq.Lna"); // pass: 123456
+            newUser.setEmail(phone + "@customer.internal");
+            newUser.setFullName("Khách hàng " + phone);
+            newUser.setPhone(phone);
+            newUser.setRole("ROLE_CUSTOMER");
+            newUser.setOrderCount(0);
+            return userRepository.save(newUser);
+        });
+
+        int newOrderCount = user.getOrderCount() + 1;
+
+        // Nếu chạm mốc 50 đơn -> Tặng ngay 1 Voucher tri ân trị giá 50.000đ
+        if (newOrderCount >= 50) {
+            newOrderCount -= 50;
+            String voucherCode = "VIP50_" + phone.substring(Math.max(0, phone.length() - 4)) + "_" + (System.currentTimeMillis() % 10000);
+            CustomerVoucher reward = new CustomerVoucher(
+                    phone,
+                    voucherCode,
+                    "Tri ân 50 đơn hàng - Giảm 50.000 ₫",
+                    BigDecimal.valueOf(50000),
+                    LocalDateTime.now().plusDays(30)
+            );
+            customerVoucherRepository.save(reward);
+        }
+
+        user.setOrderCount(newOrderCount);
+        userRepository.save(user);
+    }
+
+    // 9. Báo cáo nhanh bán hàng trong ngày hôm nay
     public Map<String, Object> getTodayReport() {
         LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
         LocalDateTime endOfDay = LocalDate.now().atTime(LocalTime.MAX);
@@ -257,11 +392,11 @@ public class OrderService {
         for (Order order : todayOrders) {
             BigDecimal amount = order.getTotalAmount() != null ? order.getTotalAmount() : BigDecimal.ZERO;
 
-            if ("PAID".equalsIgnoreCase(order.getStatus())) {
+            if ("PAID".equalsIgnoreCase(order.getStatus()) || "delivered".equalsIgnoreCase(order.getStatus()) || "paid".equalsIgnoreCase(order.getPaymentStatus())) {
                 paidOrdersCount++;
                 totalRevenue = totalRevenue.add(amount);
 
-                if ("TRANSFER".equalsIgnoreCase(order.getPaymentMethod())) {
+                if ("bank_transfer".equalsIgnoreCase(order.getPaymentMethod()) || "TRANSFER".equalsIgnoreCase(order.getPaymentMethod())) {
                     transferRevenue = transferRevenue.add(amount);
                 } else {
                     cashRevenue = cashRevenue.add(amount);
@@ -292,4 +427,3 @@ public class OrderService {
         return report;
     }
 }
-
