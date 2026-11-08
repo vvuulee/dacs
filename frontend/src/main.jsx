@@ -5,16 +5,19 @@ import App from './App';
 import { createQueryClient } from './api/queryClient';
 import { AuthProvider } from './features/auth/AuthContext';
 import { CartProvider } from './features/cart/CartContext';
+import { StaffAuthProvider } from './features/staff/StaffAuthContext';
 import './styles/tokens.css';
 
 createRoot(document.getElementById('root')).render(
   <QueryClientProvider client={createQueryClient()}>
     <AuthProvider>
-      <CartProvider>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
-      </CartProvider>
+      <StaffAuthProvider>
+        <CartProvider>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </CartProvider>
+      </StaffAuthProvider>
     </AuthProvider>
   </QueryClientProvider>,
 );

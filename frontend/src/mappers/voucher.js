@@ -19,6 +19,8 @@ export function toVoucherResult(raw) {
 }
 
 // Không gửi giá và không gửi ghi chú: backend tự tính mức giảm từ món, size, topping, số lượng.
-export function toVoucherRequest({ code, items }) {
-  return { code, items: items.map((item) => { const { note: _note, ...forVoucher } = toRequestItem(item); return forVoucher; }) };
+export function toVoucherRequest({ code, items, source }) {
+  const request = { code, items: items.map((item) => { const { note: _note, ...forVoucher } = toRequestItem(item); return forVoucher; }) };
+  if (source) request.source = source;
+  return request;
 }

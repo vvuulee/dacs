@@ -7,8 +7,8 @@ import styles from './AccountForm.module.css';
 const EMPTY = { current: '', next: '', confirm: '' };
 const UNPROCESSABLE = 422;
 
-export default function ChangePasswordForm() {
-  const change = useChangePassword();
+export default function ChangePasswordForm({ useMutationHook = useChangePassword }) {
+  const change = useMutationHook();
   const [form, setForm] = useState(EMPTY);
   const [errors, setErrors] = useState({});
   const [done, setDone] = useState(false);

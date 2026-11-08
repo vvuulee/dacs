@@ -1,13 +1,14 @@
 import { ApiError } from '../api/client';
 import {
-  MAX_QTY, MIN_QTY, MOCK_DELIVERY_FEE, MOCK_ORDERS_KEY, PAYMENT_TTL_MS,
-  STEP_DELIVERING_MS, STEP_PLACED_MS, STEP_PREPARING_MS, VOUCHER_INVALID_CODE,
+  MAX_QTY, MIN_QTY, MOCK_DELIVERY_FEE, MOCK_ORDERS_KEY, PAYMENT_TTL_MS, TABLE_MAX, VOUCHER_INVALID_CODE,
 } from '../constants';
-import { isOnlinePayment, PAYMENT_METHODS } from '../features/orders/orderStatus';
+import { canTransition, isOnlinePayment, PAYMENT_METHODS, STATUS_LABELS } from '../features/orders/orderStatus';
 import { normalizeVoucherCode } from '../features/vouchers/normalizeCode';
 import { provinces, wardsByProvince } from './addresses';
 import { products } from './products';
+import { withAvailability } from './availabilityStore';
 import { evaluateVoucher } from './voucherEngine';
+import { loadVouchers } from './voucherStore';
 
 const ORDER_ID_DIGITS = 8;
 const invalid = (message) => new ApiError(422, message);
@@ -18,25 +19,29 @@ export function newOrderId() {
   return `CF${String(n).padStart(ORDER_ID_DIGITS, '0')}`;
 }
 
-function stepAt(elapsed) {
-  if (elapsed < STEP_PLACED_MS) return 'placed';
-  if (elapsed < STEP_PLACED_MS + STEP_PREPARING_MS) return 'preparing';
-  if (elapsed < STEP_PLACED_MS + STEP_PREPARING_MS + STEP_DELIVERING_MS) return 'delivering';
-  return 'delivered';
-}
-
-// Trạng thái là hàm thuần của thời gian: tải lại trang không làm mất tiến trình.
+// Trạng thái do nhân viên chuyển và được lưu; chỉ hạn thanh toán online còn tính theo thời gian.
+// Đơn lưu từ bản cũ chưa có status thì coi là placed.
 export function computeOrderStatus(order, now) {
-  const created = Date.parse(order.created_at);
+  if (order.source === 'counter') return { status: 'completed', paymentStatus: 'paid' };
   if (!isOnlinePayment(order.payment_method)) {
-    return { status: stepAt(now - created), paymentStatus: 'unpaid' };
+    return { status: order.status ?? 'placed', paymentStatus: 'unpaid' };
   }
   if (order.paid_at) {
-    return { status: stepAt(now - Date.parse(order.paid_at)), paymentStatus: 'paid' };
+    const status = !order.status || order.status === 'awaiting_payment' ? 'placed' : order.status;
+    return { status, paymentStatus: 'paid' };
   }
+  const created = Date.parse(order.created_at);
   return now < created + PAYMENT_TTL_MS
     ? { status: 'awaiting_payment', paymentStatus: 'pending' }
     : { status: 'cancelled', paymentStatus: 'expired' };
+}
+
+export function transitionOrder(order, next, now) {
+  const { status } = computeOrderStatus(order, now);
+  if (order.source === 'counter' || !canTransition(status, next)) {
+    throw new ApiError(409, `Không thể chuyển đơn từ "${STATUS_LABELS[status]}" sang "${STATUS_LABELS[next] ?? next}"`);
+  }
+  return { ...order, status: next };
 }
 
 export function loadStoredOrders() {
@@ -62,8 +67,10 @@ export function saveStoredOrders(orders) {
 
 // Request không có giá; mock đóng vai backend và tự tính từ danh mục món mẫu.
 function priceItem(item) {
-  const product = products.find((p) => p.id === item.product_id);
-  if (!product) throw invalid(`Món không tồn tại: ${item.product_id}`);
+  const found = products.find((p) => p.id === item.product_id);
+  if (!found) throw invalid(`Món không tồn tại: ${item.product_id}`);
+  const product = withAvailability(found);
+  if (product.is_available === false) throw invalid(`Món ${product.name} đã hết`);
   if (!Number.isInteger(item.quantity) || item.quantity < MIN_QTY || item.quantity > MAX_QTY) {
     throw invalid(`Số lượng không hợp lệ: ${item.quantity}`);
   }
@@ -93,9 +100,9 @@ export function priceItems(items) {
 }
 
 // Đánh giá mã tại thời điểm đặt: mã đã hết hạn giữa chừng bị từ chối kèm mã lỗi máy đọc được.
-function applyVoucher(code, subtotal, now) {
+function applyVoucher(code, subtotal, now, deliveryFee = MOCK_DELIVERY_FEE, source = 'online') {
   if (!code) return { voucherCode: null, discount: 0 };
-  const result = evaluateVoucher(code, subtotal, MOCK_DELIVERY_FEE, now);
+  const result = evaluateVoucher(code, subtotal, deliveryFee, now, loadVouchers(), source);
   if (!result.ok) throw new ApiError(422, result.reason, VOUCHER_INVALID_CODE);
   return { voucherCode: normalizeVoucherCode(code), discount: result.discount };
 }
@@ -113,6 +120,9 @@ export function buildStoredOrder(request, now, userId = null) {
   const { voucherCode, discount } = applyVoucher(request.voucher_code, subtotal, now);
   return {
     id: newOrderId(),
+    source: 'online',
+    service_type: 'delivery',
+    status: isOnlinePayment(request.payment_method) ? 'awaiting_payment' : 'placed',
     payment_method: request.payment_method,
     customer: request.customer,
     address: { province_name: province.name, ward_name: ward.name, street },
@@ -130,11 +140,63 @@ export function buildStoredOrder(request, now, userId = null) {
   };
 }
 
+const COUNTER_SERVICE_TYPES = ['dine_in', 'takeaway'];
+const COUNTER_PAYMENT_METHODS = ['cash', 'bank_transfer'];
+
+// Đơn tại quầy: không phí giao, trả tiền ngay nên hoàn tất luôn; tiền thối do mock (backend) tính.
+export function buildCounterOrder(request, now, staffId) {
+  if (!COUNTER_SERVICE_TYPES.includes(request.service_type)) throw invalid(`Hình thức không hợp lệ: ${request.service_type}`);
+  if (!COUNTER_PAYMENT_METHODS.includes(request.payment_method)) {
+    throw invalid(`Phương thức thanh toán không hợp lệ: ${request.payment_method}`);
+  }
+  const table = request.service_type === 'dine_in' ? String(request.table ?? '').trim() : null;
+  if (table !== null && (table.length < 1 || table.length > TABLE_MAX)) throw invalid('Số bàn không hợp lệ');
+  if (!request.items?.length) throw invalid('Đơn hàng không có món nào');
+  const { items, subtotal } = priceItems(request.items);
+  const { voucherCode, discount } = applyVoucher(request.voucher_code, subtotal, now, 0, 'counter');
+  const total = subtotal - discount;
+  let cashReceived = null;
+  if (request.payment_method === 'cash') {
+    cashReceived = request.cash_received;
+    if (!Number.isInteger(cashReceived) || cashReceived < total) throw invalid('Tiền khách đưa không đủ');
+  }
+  return {
+    id: newOrderId(),
+    source: 'counter',
+    service_type: request.service_type,
+    table,
+    status: 'completed',
+    payment_method: request.payment_method,
+    customer: null,
+    address: null,
+    note: '',
+    items,
+    subtotal,
+    delivery_fee: 0,
+    discount,
+    voucher_code: voucherCode,
+    total,
+    cash_received: cashReceived,
+    change: cashReceived === null ? null : cashReceived - total,
+    created_at: iso(now),
+    paid_at: iso(now),
+    client_request_id: request.client_request_id,
+    user_id: null,
+    staff_id: staffId,
+  };
+}
+
+// shortcut: "hôm nay" theo giờ máy chạy mock; backend thật dùng múi giờ của quán.
+export const isToday = (isoString, now) => new Date(isoString).toDateString() === new Date(now).toDateString();
+
 export function toRawOrder(stored, now) {
-  const { paid_at: _paidAt, client_request_id: _requestId, user_id: _userId, ...rest } = stored;
+  const { paid_at: _paidAt, client_request_id: _requestId, user_id: _userId, staff_id: _staffId, ...rest } = stored;
   const { status, paymentStatus } = computeOrderStatus(stored, now);
   const payment = status === 'awaiting_payment'
     ? { expires_at: iso(Date.parse(stored.created_at) + PAYMENT_TTL_MS), qr_content: `COFFEE-${stored.id}-${stored.total}` }
     : null;
-  return { ...rest, status, payment_status: paymentStatus, payment };
+  return {
+    source: 'online', service_type: 'delivery', table: null, cash_received: null, change: null,
+    ...rest, status, payment_status: paymentStatus, payment,
+  };
 }

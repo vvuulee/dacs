@@ -6,9 +6,9 @@ const isValidLine = (line) =>
   Number.isInteger(line.unitPrice) && line.unitPrice >= 0;
 
 // Mọi lỗi lưu trữ chỉ cảnh báo: giỏ hàng hỏng không được làm app crash.
-export function loadCart() {
+export function loadCart(key = CART_STORAGE_KEY) {
   try {
-    const raw = localStorage.getItem(CART_STORAGE_KEY);
+    const raw = localStorage.getItem(key);
     if (raw === null) return [];
     const data = JSON.parse(raw);
     const valid = data?.version === CART_STORAGE_VERSION && Array.isArray(data.items) && data.items.every(isValidLine);
@@ -20,9 +20,9 @@ export function loadCart() {
   return [];
 }
 
-export function saveCart(items) {
+export function saveCart(items, key = CART_STORAGE_KEY) {
   try {
-    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify({ version: CART_STORAGE_VERSION, items }));
+    localStorage.setItem(key, JSON.stringify({ version: CART_STORAGE_VERSION, items }));
   } catch (error) {
     console.warn(`Không lưu được giỏ hàng: ${error.message}`);
   }

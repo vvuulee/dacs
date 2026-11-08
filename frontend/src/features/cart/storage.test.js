@@ -29,3 +29,9 @@ it('getItem ném lỗi (bị chặn) → loadCart trả []', () => {
   vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('blocked'); });
   expect(loadCart()).toEqual([]);
 });
+
+it('khoá riêng không đụng giỏ khách', () => {
+  saveCart([line], 'k2');
+  expect(loadCart()).toEqual([]);
+  expect(loadCart('k2')).toEqual([line]);
+});

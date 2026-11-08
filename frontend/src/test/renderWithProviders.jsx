@@ -4,6 +4,7 @@ import { MemoryRouter, useLocation } from 'react-router-dom';
 import { createQueryClient } from '../api/queryClient';
 import { AuthProvider } from '../features/auth/AuthContext';
 import { CartProvider } from '../features/cart/CartContext';
+import { StaffAuthProvider } from '../features/staff/StaffAuthContext';
 
 export function LocationDisplay() {
   const { pathname, search } = useLocation();
@@ -14,9 +15,11 @@ export function renderWithProviders(ui, { route = '/' } = {}) {
   return render(
     <QueryClientProvider client={createQueryClient()}>
       <AuthProvider>
-        <CartProvider>
-          <MemoryRouter initialEntries={[route]}>{ui}</MemoryRouter>
-        </CartProvider>
+        <StaffAuthProvider>
+          <CartProvider>
+            <MemoryRouter initialEntries={[route]}>{ui}</MemoryRouter>
+          </CartProvider>
+        </StaffAuthProvider>
       </AuthProvider>
     </QueryClientProvider>,
   );

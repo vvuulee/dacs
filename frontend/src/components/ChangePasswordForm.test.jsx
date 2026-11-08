@@ -67,3 +67,14 @@ it('mật khẩu hiện tại để trống → lỗi và focus ô hiện tại'
   expect(screen.getByText('Nhập mật khẩu hiện tại')).toBeInTheDocument();
   expect(screen.getByLabelText('Mật khẩu hiện tại')).toHaveFocus();
 });
+
+it('nhận hook đổi mật khẩu qua prop (dùng cho nhân viên)', async () => {
+  const mutate = vi.fn();
+  const useFake = () => ({ mutate, isPending: false, isError: false, error: null });
+  renderWithProviders(<ChangePasswordForm useMutationHook={useFake} />);
+  await userEvent.type(screen.getByLabelText('Mật khẩu hiện tại'), 'matkhau123');
+  await userEvent.type(screen.getByLabelText('Mật khẩu mới'), 'matkhau456');
+  await userEvent.type(screen.getByLabelText('Nhập lại mật khẩu mới'), 'matkhau456');
+  await userEvent.click(screen.getByRole('button', { name: 'Đổi mật khẩu' }));
+  expect(mutate).toHaveBeenCalledWith({ currentPassword: 'matkhau123', newPassword: 'matkhau456' }, expect.any(Object));
+});

@@ -1,9 +1,10 @@
 import { MOCK_DELIVERY_FEE, MOCK_LATENCY_MS, MY_ORDERS_MAX } from '../../constants';
 import { normalizeText } from '../../lib/text';
 import { provinces, wardsByProvince } from '../../mocks/addresses';
-import { vouchers } from '../../mocks/offers';
 import { stores } from '../../mocks/stores';
 import { evaluateVoucher } from '../../mocks/voucherEngine';
+import { loadVouchers } from '../../mocks/voucherStore';
+import { withAvailability } from '../../mocks/availabilityStore';
 import { categories } from '../../mocks/categories';
 import { products } from '../../mocks/products';
 import { getToken } from '../../features/auth/session';
@@ -12,6 +13,7 @@ import { isOnlinePayment } from '../../features/orders/orderStatus';
 import { normalizePhone } from '../../lib/phone';
 import { buildStoredOrder, computeOrderStatus, priceItems, loadStoredOrders, saveStoredOrders, toRawOrder } from '../../mocks/orderStore';
 import { ApiError, notifyUnauthorized } from '../client';
+import { createStaffMethods } from './mockStaffMethods';
 
 // Sai mã hay sai SĐT đều trả đúng một thông báo, để không dò được mã đơn tồn tại.
 const ORDER_NOT_FOUND = 'Không tìm thấy đơn';
@@ -59,9 +61,9 @@ export function createMockAdapter(latencyMs = MOCK_LATENCY_MS, now = () => Date.
     async getProducts({ categoryId, q } = {}) {
       await wait();
       const needle = normalizeText(q);
-      return products.filter(
-        (p) => (!categoryId || p.category_id === categoryId) && normalizeText(p.name).includes(needle),
-      );
+      return products
+        .filter((p) => (!categoryId || p.category_id === categoryId) && normalizeText(p.name).includes(needle))
+        .map(withAvailability);
     },
     async getStores({ provinceId, q } = {}) {
       await wait();
@@ -71,16 +73,17 @@ export function createMockAdapter(latencyMs = MOCK_LATENCY_MS, now = () => Date.
     // Chỉ ưu đãi công khai còn hạn, và không lộ chi tiết nội bộ (type/value/max_discount).
     async getOffers() {
       await wait();
-      return vouchers
+      return loadVouchers()
         .filter((v) => v.listed && Date.parse(v.expires_at) > now())
         .map(({ id, title, description, code, min_order: minOrder, expires_at: expiresAt }) => (
           { id, title, description, code, min_order: minOrder, expires_at: expiresAt }));
     },
-    async validateVoucher({ code, items }) {
+    async validateVoucher({ code, items, source = 'online' }) {
       await wait();
       if (!items?.length) throw new ApiError(422, 'Đơn hàng không có món nào');
       const { subtotal } = priceItems(items);
-      const result = evaluateVoucher(code, subtotal, MOCK_DELIVERY_FEE, now());
+      const fee = source === 'counter' ? 0 : MOCK_DELIVERY_FEE;
+      const result = evaluateVoucher(code, subtotal, fee, now(), loadVouchers(), source);
       if (!result.ok) return { valid: false, reason: result.reason };
       return { valid: true, code: result.voucher.code, title: result.voucher.title, discount: result.discount };
     },
@@ -174,6 +177,7 @@ export function createMockAdapter(latencyMs = MOCK_LATENCY_MS, now = () => Date.
           throw new ApiError(409, 'Đơn đã hết hạn thanh toán');
         }
         order.paid_at = new Date(now()).toISOString();
+        order.status = 'placed';
         saveStoredOrders(orders);
       }
       return toRawOrder(order, now());
@@ -182,10 +186,10 @@ export function createMockAdapter(latencyMs = MOCK_LATENCY_MS, now = () => Date.
       await wait();
       const found = products.find((p) => p.id === id);
       if (!found) throw new ApiError(404, `Không tìm thấy món: ${id}`);
-      return found;
+      return withAvailability(found);
     },
   };
-  return reportUnauthorized(methods);
+  return { ...reportUnauthorized(methods), ...createStaffMethods({ now, wait }) };
 }
 
 export const mockAdapter = createMockAdapter();

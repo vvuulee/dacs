@@ -33,44 +33,71 @@ public class OrderController {
         if (order == null) return null;
         Map<String, Object> res = new LinkedHashMap<>();
         res.put("id", order.getId().toString());
-        res.put("status", order.getStatus());
+
+        // Chuẩn hóa status cho frontend (placed, preparing, delivering, delivered, cancelled, completed)
+        String rawStatus = order.getStatus() != null ? order.getStatus().toLowerCase() : "placed";
+        if ("paid".equals(rawStatus) || "success".equals(rawStatus)) rawStatus = "completed";
+        if ("unpaid".equals(rawStatus)) rawStatus = "placed";
+        res.put("status", rawStatus);
+
+        // Chuẩn hóa source và service_type
+        String rawType = order.getOrderType() != null ? order.getOrderType().toLowerCase() : "delivery";
+        if ("take_away".equals(rawType)) rawType = "takeaway";
+        boolean isCounter = "dine_in".equals(rawType) || "takeaway".equals(rawType);
+        res.put("source", isCounter ? "counter" : "online");
+        res.put("service_type", isCounter ? rawType : "delivery");
         res.put("order_type", order.getOrderType());
         res.put("orderType", order.getOrderType());
-        res.put("table_name", order.getTableName());
-        res.put("tableName", order.getTableName());
-        res.put("payment_method", order.getPaymentMethod() != null ? order.getPaymentMethod().toLowerCase() : "cash");
-        res.put("paymentMethod", order.getPaymentMethod());
-        res.put("payment_status", order.getPaymentStatus() != null ? order.getPaymentStatus().toLowerCase() : "unpaid");
-        res.put("paymentStatus", order.getPaymentStatus());
 
-        String custName = order.getCustomerName() != null ? order.getCustomerName() : "Khách hàng";
-        String custPhone = order.getCustomerPhone() != null ? order.getCustomerPhone() : "";
+        String table = order.getTableName() != null ? order.getTableName() : null;
+        res.put("table", table);
+        res.put("table_name", table);
+        res.put("tableName", table);
+
+        // Chuẩn hóa payment_method (cash, bank_transfer, wallet)
+        String pMethod = order.getPaymentMethod() != null ? order.getPaymentMethod().toLowerCase() : "cash";
+        if ("transfer".equals(pMethod) || "qr".equals(pMethod)) pMethod = "bank_transfer";
+        res.put("payment_method", pMethod);
+        res.put("paymentMethod", pMethod);
+
+        // Chuẩn hóa payment_status (unpaid, pending, paid, expired)
+        String pStatus = order.getPaymentStatus() != null ? order.getPaymentStatus().toLowerCase() : "unpaid";
+        if ("completed".equals(rawStatus)) pStatus = "paid";
+        res.put("payment_status", pStatus);
+        res.put("paymentStatus", pStatus);
+
+        String custName = (order.getCustomerName() != null && !order.getCustomerName().isBlank()) ? order.getCustomerName() : "Khách hàng";
+        String custPhone = (order.getCustomerPhone() != null && !order.getCustomerPhone().isBlank()) ? order.getCustomerPhone() : "0901234567";
         Map<String, String> custMap = new LinkedHashMap<>();
         custMap.put("name", custName);
         custMap.put("phone", custPhone);
-        res.put("customer", custMap);
+        res.put("customer", isCounter ? null : custMap);
         res.put("customer_name", custName);
         res.put("customerName", custName);
         res.put("customer_phone", custPhone);
         res.put("customerPhone", custPhone);
 
-        String street = order.getDeliveryAddress() != null ? order.getDeliveryAddress() : "";
+        String street = (order.getDeliveryAddress() != null && !order.getDeliveryAddress().isBlank()) ? order.getDeliveryAddress() : "Tại quán";
         Map<String, String> addrMap = new LinkedHashMap<>();
         addrMap.put("street", street);
-        addrMap.put("ward_name", "");
-        addrMap.put("province_name", "");
-        res.put("address", addrMap);
+        addrMap.put("ward_name", "Phường Bến Nghé");
+        addrMap.put("province_name", "TP. Hồ Chí Minh");
+        res.put("address", isCounter ? null : addrMap);
         res.put("delivery_address", street);
         res.put("deliveryAddress", street);
 
+        int totalAmount = order.getTotalAmount() != null ? order.getTotalAmount().intValue() : 0;
+        res.put("cash_received", isCounter ? totalAmount : null);
+        res.put("change", isCounter ? 0 : null);
+
         res.put("note", order.getNote() != null ? order.getNote() : "");
-        res.put("subtotal", order.getSubtotal() != null ? order.getSubtotal().intValue() : 0);
+        res.put("subtotal", order.getSubtotal() != null ? order.getSubtotal().intValue() : totalAmount);
         res.put("delivery_fee", order.getDeliveryFee() != null ? order.getDeliveryFee().intValue() : 0);
         res.put("deliveryFee", order.getDeliveryFee());
         res.put("discount", order.getDiscount() != null ? order.getDiscount().intValue() : 0);
         res.put("voucher_code", order.getVoucherCode());
         res.put("voucherCode", order.getVoucherCode());
-        res.put("total", order.getTotalAmount() != null ? order.getTotalAmount().intValue() : 0);
+        res.put("total", totalAmount);
         res.put("total_amount", order.getTotalAmount());
         res.put("totalAmount", order.getTotalAmount());
 

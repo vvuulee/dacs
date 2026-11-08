@@ -62,17 +62,21 @@ it('sai SĐT và sai mã cho cùng status 404 và cùng message', async () => {
   expect([wrongPhone.status, wrongPhone.message]).toEqual([404, 'Không tìm thấy đơn']);
   expect([wrongId.status, wrongId.message]).toEqual([wrongPhone.status, wrongPhone.message]);
 });
-it('trạng thái tiến triển theo đồng hồ', async () => {
+it('trạng thái không tự tiến triển theo đồng hồ', async () => {
   const { id } = await adapter.createOrder(request());
-  clock = t0 + 15000;
-  expect((await adapter.getOrder(id, '0901234567')).status).toBe('preparing');
+  clock = t0 + 10 ** 9;
+  expect((await adapter.getOrder(id, '0901234567')).status).toBe('placed');
 });
-it('simulatePayment: placed, payment null, paid; sau 15s là preparing', async () => {
+it('đơn online trả về source/service_type mặc định', async () => {
+  const order = await adapter.createOrder(request());
+  expect(order).toMatchObject({ source: 'online', service_type: 'delivery', table: null, cash_received: null, change: null });
+});
+it('simulatePayment: placed, payment null, paid; sau đó vẫn placed', async () => {
   const { id } = await adapter.createOrder(request({ payment_method: 'wallet' }));
   clock = t0 + 60000;
   expect(await adapter.simulatePayment(id)).toMatchObject({ status: 'placed', payment_status: 'paid', payment: null });
-  clock = t0 + 75000;
-  expect((await adapter.getOrder(id, '0901234567')).status).toBe('preparing');
+  clock = t0 + 10 ** 9;
+  expect((await adapter.getOrder(id, '0901234567')).status).toBe('placed');
 });
 it('simulatePayment hai lần vẫn ổn (idempotent)', async () => {
   const { id } = await adapter.createOrder(request({ payment_method: 'wallet' }));

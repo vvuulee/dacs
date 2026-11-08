@@ -18,6 +18,14 @@ it('toOrder map snake_case → camelCase', () =>
 it('payment → { expiresAt, qrContent }', () =>
   expect(toOrder({ ...raw, payment: { expires_at: '2026-10-30T03:05:00.000Z', qr_content: 'COFFEE-1' } }).payment)
     .toEqual({ expiresAt: '2026-10-30T03:05:00.000Z', qrContent: 'COFFEE-1' }));
+it('đơn online không có source → mặc định online/delivery', () =>
+  expect(toOrder(raw)).toMatchObject({ source: 'online', serviceType: 'delivery', table: null, cashReceived: null, change: null }));
+it('đơn quầy: customer/address null được chấp nhận', () => {
+  const counter = { ...raw, status: 'completed', payment_status: 'paid', source: 'counter', service_type: 'dine_in', table: '5', customer: null, address: null, delivery_fee: 0, cash_received: 100000, change: 40000 };
+  expect(toOrder(counter)).toMatchObject({ source: 'counter', serviceType: 'dine_in', table: '5', customer: null, address: null, cashReceived: 100000, change: 40000, status: 'completed' });
+});
+it('đơn online thiếu customer vẫn ném lỗi', () => expect(() => toOrder({ ...raw, customer: null })).toThrow(/customer/));
+it('source lạ ném lỗi', () => expect(() => toOrder({ ...raw, source: 'fax' })).toThrow(/fax/));
 it('summary và note món thiếu → ""', () => {
   const item = { product_id: 'a', name: 'A', quantity: 1, unit_price: 1000 };
   expect(toOrder({ ...raw, items: [item] }).items[0]).toMatchObject({ summary: '', note: '' });

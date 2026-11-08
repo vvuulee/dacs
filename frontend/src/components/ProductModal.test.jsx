@@ -4,7 +4,8 @@ import { Route, Routes } from 'react-router-dom';
 import { CART_STORAGE_KEY } from '../constants';
 import MenuPage from '../pages/MenuPage';
 import { LocationDisplay, renderWithProviders } from '../test/renderWithProviders';
-import ProductModal from './ProductModal';
+import { useCart } from '../features/cart/CartContext';
+import ProductModal, { ProductForm } from './ProductModal';
 
 vi.mock('../api', async () => {
   const { createMockAdapter } = await import('../api/adapters/mockAdapter');
@@ -83,4 +84,22 @@ it('/menu/khong-ton-tai: Menu vẫn hiện, modal báo không tồn tại kèm l
   expect(await screen.findByText(/không tồn tại/i)).toBeInTheDocument();
   expect(screen.getByRole('region', { name: 'Danh sách món' })).toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'Về Menu' })).toHaveAttribute('href', '/menu');
+});
+
+describe('ProductForm dùng lại cho quầy', () => {
+  const product = {
+    id: 'bac-xiu', name: 'Bạc xỉu', description: '', image: '', categoryId: 'ca-phe', basePrice: 29000,
+    sizes: [{ id: 's', label: 'Nhỏ', extraPrice: 0 }], toppings: [], isAvailable: true,
+  };
+  function CartCount() {
+    const { items } = useCart();
+    return <p data-testid="count">{items.length}</p>;
+  }
+  it('nhãn tuỳ chỉnh; bấm thì thêm vào giỏ của provider gần nhất và gọi onDone', async () => {
+    const onDone = vi.fn();
+    renderWithProviders(<><ProductForm product={product} onDone={onDone} submitLabel="Thêm vào đơn" /><CartCount /></>);
+    await userEvent.click(screen.getByRole('button', { name: /thêm vào đơn/i }));
+    expect(screen.getByTestId('count')).toHaveTextContent('1');
+    expect(onDone).toHaveBeenCalled();
+  });
 });

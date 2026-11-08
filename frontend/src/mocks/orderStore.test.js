@@ -1,21 +1,47 @@
 import { MOCK_ORDERS_KEY } from '../constants';
-import { computeOrderStatus, loadStoredOrders, newOrderId } from './orderStore';
+import { computeOrderStatus, loadStoredOrders, newOrderId, transitionOrder } from './orderStore';
 
 const t0 = 1_000_000;
 const iso = (ms) => new Date(ms).toISOString();
 const cash = { id: 'CF1', payment_method: 'cash', created_at: iso(t0), paid_at: null };
 const online = { ...cash, payment_method: 'bank_transfer' };
 
-it.each([[0, 'placed'], [14999, 'placed'], [15000, 'preparing'], [44999, 'preparing'], [45000, 'delivering'], [89999, 'delivering'], [90000, 'delivered']])(
-  'tiền mặt +%ims → %s',
-  (dt, status) => expect(computeOrderStatus(cash, t0 + dt)).toEqual({ status, paymentStatus: 'unpaid' }),
-);
+it('tiền mặt chưa có status → placed', () =>
+  expect(computeOrderStatus(cash, t0)).toEqual({ status: 'placed', paymentStatus: 'unpaid' }));
+it('thời gian trôi không làm đổi trạng thái đã lưu', () =>
+  expect(computeOrderStatus({ ...cash, status: 'preparing' }, t0 + 10 ** 9).status).toBe('preparing'));
+it('đơn quầy → completed/paid', () =>
+  expect(computeOrderStatus({ ...cash, source: 'counter', status: 'completed', paid_at: iso(t0) }, t0)).toEqual({ status: 'completed', paymentStatus: 'paid' }));
 it('online chưa trả, trong hạn → awaiting_payment/pending', () =>
   expect(computeOrderStatus(online, t0 + 299999)).toEqual({ status: 'awaiting_payment', paymentStatus: 'pending' }));
 it('online chưa trả, đúng hạn → cancelled/expired', () =>
   expect(computeOrderStatus(online, t0 + 300000)).toEqual({ status: 'cancelled', paymentStatus: 'expired' }));
-it('online đã trả tính mốc từ paid_at', () =>
-  expect(computeOrderStatus({ ...online, paid_at: iso(t0 + 60000) }, t0 + 75000)).toEqual({ status: 'preparing', paymentStatus: 'paid' }));
+it('online đã trả, chưa có status → placed/paid', () =>
+  expect(computeOrderStatus({ ...online, paid_at: iso(t0 + 60000) }, t0 + 75000)).toEqual({ status: 'placed', paymentStatus: 'paid' }));
+it('online đã trả, status đã lưu được giữ nguyên', () =>
+  expect(computeOrderStatus({ ...online, paid_at: iso(t0), status: 'delivering' }, t0 + 10 ** 9).status).toBe('delivering'));
+describe('transitionOrder', () => {
+  const placed = { ...cash, status: 'placed' };
+  it('đi đúng từng bước', () => {
+    const a = transitionOrder(placed, 'preparing', t0);
+    const b = transitionOrder(a, 'delivering', t0);
+    expect(transitionOrder(b, 'delivered', t0).status).toBe('delivered');
+    expect(placed.status).toBe('placed');
+  });
+  it('huỷ được từ placed và preparing', () => {
+    expect(transitionOrder(placed, 'cancelled', t0).status).toBe('cancelled');
+    expect(transitionOrder({ ...cash, status: 'preparing' }, 'cancelled', t0).status).toBe('cancelled');
+  });
+  it.each([
+    ['nhảy bước', { ...cash, status: 'placed' }, 'delivered'],
+    ['huỷ khi đang giao', { ...cash, status: 'delivering' }, 'cancelled'],
+    ['đơn chờ thanh toán', online, 'preparing'],
+    ['đơn quầy', { ...cash, source: 'counter', status: 'completed', paid_at: iso(t0) }, 'delivered'],
+    ['đã giao', { ...cash, status: 'delivered' }, 'cancelled'],
+  ])('%s → 409', (_, order, next) => {
+    expect(() => transitionOrder(order, next, t0)).toThrow(expect.objectContaining({ status: 409 }));
+  });
+});
 it('newOrderId khớp CF + 8 số', () => expect(newOrderId()).toMatch(/^CF\d{8}$/));
 describe('loadStoredOrders', () => {
   beforeEach(() => { localStorage.clear(); vi.spyOn(console, 'warn').mockImplementation(() => {}); });

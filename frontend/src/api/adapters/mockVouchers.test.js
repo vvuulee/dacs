@@ -1,6 +1,8 @@
 import { MOCK_ORDERS_KEY } from '../../constants';
 import { clearSession, saveSession } from '../../features/auth/session';
 import { createMockAdapter } from './mockAdapter';
+import { saveVouchers } from '../../mocks/voucherStore';
+import { setAvailability } from '../../mocks/availabilityStore';
 
 const NOW = Date.parse('2026-10-30T00:00:00Z');
 const PHONE = '0901234567';
@@ -110,5 +112,35 @@ describe('đặt hàng có mã', () => {
     const created = await adapter.createOrder(request({ voucher_code: 'CHAO10' }));
     expect(await adapter.getOrder(created.id, PHONE)).toMatchObject({ discount: 10200, voucher_code: 'CHAO10' });
     expect((await adapter.getMyOrders())[0]).toMatchObject({ discount: 10200, voucher_code: 'CHAO10' });
+  });
+});
+
+describe('voucher và còn hàng lưu trong localStorage', () => {
+  it('xoá hết voucher → getOffers rỗng và mã cũ không tồn tại', async () => {
+    saveVouchers([]);
+    expect(await adapter.getOffers()).toEqual([]);
+    expect(await adapter.validateVoucher({ code: 'CHAO10', items })).toEqual({ valid: false, reason: 'Mã giảm giá không tồn tại' });
+  });
+  it('đặt hàng đọc voucher từ store', async () => {
+    saveVouchers([]);
+    await expect(adapter.createOrder(request({ voucher_code: 'CHAO10' }))).rejects.toMatchObject({ status: 422 });
+  });
+  it('validate với source counter từ chối freeship', async () => {
+    expect(await adapter.validateVoucher({ code: 'FREESHIP', items, source: 'counter' }))
+      .toEqual({ valid: false, reason: 'Mã chỉ áp dụng cho đơn giao hàng' });
+  });
+  it('món bị tắt: khách thấy is_available false ở danh sách và chi tiết', async () => {
+    setAvailability('bac-xiu', false);
+    expect((await adapter.getProducts()).find((p) => p.id === 'bac-xiu').is_available).toBe(false);
+    expect((await adapter.getProduct('bac-xiu')).is_available).toBe(false);
+  });
+  it('đặt món đã tắt → 422 "Món Bạc xỉu đã hết"', async () => {
+    setAvailability('bac-xiu', false);
+    const order = request({ items: [{ product_id: 'bac-xiu', size_id: 'm', topping_ids: [], note: '', quantity: 1 }] });
+    await expect(adapter.createOrder(order)).rejects.toMatchObject({ status: 422, message: 'Món Bạc xỉu đã hết' });
+  });
+  it('món hết sẵn trong dữ liệu (cold-brew) → 422', async () => {
+    const order = request({ items: [{ product_id: 'cold-brew', size_id: 'm', topping_ids: [], note: '', quantity: 1 }] });
+    await expect(adapter.createOrder(order)).rejects.toMatchObject({ status: 422, message: 'Món Cold brew cam sả đã hết' });
   });
 });

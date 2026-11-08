@@ -1,13 +1,14 @@
 import { createContext, useContext, useEffect, useMemo, useReducer } from 'react';
 import { cartReducer } from './cartReducer';
+import { CART_STORAGE_KEY } from '../../constants';
 import { loadCart, saveCart } from './storage';
 
 const CartContext = createContext(null);
 
-export function CartProvider({ children }) {
-  const [items, dispatch] = useReducer(cartReducer, undefined, loadCart);
+export function CartProvider({ children, storageKey = CART_STORAGE_KEY }) {
+  const [items, dispatch] = useReducer(cartReducer, storageKey, loadCart);
 
-  useEffect(() => saveCart(items), [items]);
+  useEffect(() => saveCart(items, storageKey), [items, storageKey]);
 
   const value = useMemo(
     () => ({

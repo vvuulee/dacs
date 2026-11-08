@@ -1,0 +1,6 @@
+.screen { display: grid; place-items: center; min-height: 100vh; padding: var(--space-4); background: var(--staff-bg); }
+.card { width: min(420px, 100%); padding: var(--space-5) var(--space-4); border-radius: var(--radius-lg); background: var(--staff-surface); box-shadow: 0 20px 40px -24px rgb(59 42 30 / 0.5); }
+.title { margin: 0 0 var(--space-4); color: var(--staff-sidebar); text-align: center; }
+.error { margin: var(--space-2) 0; color: var(--color-danger); }
+.submit { width: 100%; margin-top: var(--space-3); padding: 12px; border: 0; border-radius: var(--radius-md); background: var(--staff-sidebar); color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+.submit:disabled { opacity: 0.6; cursor: not-allowed; }

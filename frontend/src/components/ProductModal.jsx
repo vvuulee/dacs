@@ -20,7 +20,8 @@ function CategoryChip({ categoryId }) {
   return <span className={styles.chip}>{category.name}</span>;
 }
 
-function ProductForm({ product, onDone }) {
+// Dùng chung cho modal của khách và hộp chọn món tại quầy (giỏ là CartProvider gần nhất).
+export function ProductForm({ product, onDone, submitLabel = 'Thêm vào giỏ' }) {
   const { add } = useCart();
   const [sizeId, setSizeId] = useState(product.sizes[0]?.id ?? null);
   const [toppingIds, setToppingIds] = useState([]);
@@ -112,7 +113,7 @@ function ProductForm({ product, onDone }) {
           <button type="button" className={styles.add} disabled={!product.isAvailable} onClick={submit}>
             {product.isAvailable ? (
               <>
-                <span className={styles.addLabel}><i className="ph-bold ph-shopping-bag" aria-hidden="true" />Thêm vào giỏ</span>
+                <span className={styles.addLabel}><i className="ph-bold ph-shopping-bag" aria-hidden="true" />{submitLabel}</span>
                 <span>{formatVnd(unitPrice * quantity)}</span>
               </>
             ) : 'Tạm hết'}

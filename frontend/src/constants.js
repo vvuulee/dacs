@@ -8,9 +8,6 @@ export const CART_STORAGE_KEY = 'coffee-web:cart';
 export const CART_STORAGE_VERSION = 1;
 
 export const PAYMENT_TTL_MS = 300000;
-export const STEP_PLACED_MS = 15000;
-export const STEP_PREPARING_MS = 30000;
-export const STEP_DELIVERING_MS = 45000;
 export const MOCK_DELIVERY_FEE = 15000;
 export const POLL_INTERVAL_MS = 5000;
 export const RECENT_ORDERS_MAX = 10;
@@ -38,3 +35,14 @@ export const VOUCHER_CODE_MIN = 3;
 export const VOUCHER_CODE_MAX = 32;
 export const ERROR_MESSAGE_MAX = 300;
 export const VOUCHER_INVALID_CODE = 'voucher_invalid';
+
+export const STAFF_SESSION_KEY = 'coffee-web:staff-session';
+export const STAFF_CART_KEY = 'coffee-web:staff-cart';
+export const MOCK_STAFF_SESSIONS_KEY = 'coffee-web:mock-staff-sessions';
+export const MOCK_STAFF_PASSWORDS_KEY = 'coffee-web:mock-staff-passwords';
+export const MOCK_VOUCHERS_KEY = 'coffee-web:mock-vouchers';
+export const MOCK_AVAILABILITY_KEY = 'coffee-web:mock-availability';
+export const TABLE_MAX = 20;
+export const VOUCHER_TITLE_MAX = 80;
+export const VOUCHER_DESCRIPTION_MAX = 200;
+export const CASH_ROUND_STEPS = [50000, 100000, 200000, 500000];

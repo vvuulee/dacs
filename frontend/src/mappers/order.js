@@ -34,20 +34,39 @@ function toDiscount(value) {
   return value;
 }
 
+const SOURCES = ['online', 'counter'];
+const SERVICE_TYPES = ['delivery', 'dine_in', 'takeaway'];
+
+// Đơn quầy không có khách/địa chỉ; đơn online vẫn bắt buộc như trước.
+function toCustomer(customer) {
+  return { name: requireField(customer, 'name', 'customer.name'), phone: requireField(customer, 'phone', 'customer.phone') };
+}
+
+function toAddress(address) {
+  return {
+    provinceName: requireField(address, 'province_name', 'address.province_name'),
+    wardName: requireField(address, 'ward_name', 'address.ward_name'),
+    street: requireField(address, 'street', 'address.street'),
+  };
+}
+
+const toOptionalMoney = (value, label) => (value === undefined || value === null ? null : requireMoney(value, label));
+
 export function toOrder(raw) {
-  const customer = raw.customer ?? {};
-  const address = raw.address ?? {};
+  const source = oneOf(raw.source ?? 'online', SOURCES, 'source');
+  const counter = source === 'counter';
   return {
     id: String(requireField(raw, 'id')),
     status: oneOf(raw.status, STATUSES, 'status'),
     paymentMethod: oneOf(raw.payment_method, METHOD_IDS, 'payment_method'),
     paymentStatus: oneOf(raw.payment_status, PAYMENT_STATUSES, 'payment_status'),
-    customer: { name: requireField(customer, 'name', 'customer.name'), phone: requireField(customer, 'phone', 'customer.phone') },
-    address: {
-      provinceName: requireField(address, 'province_name', 'address.province_name'),
-      wardName: requireField(address, 'ward_name', 'address.ward_name'),
-      street: requireField(address, 'street', 'address.street'),
-    },
+    source,
+    serviceType: oneOf(raw.service_type ?? (counter ? 'takeaway' : 'delivery'), SERVICE_TYPES, 'service_type'),
+    table: raw.table ?? null,
+    cashReceived: toOptionalMoney(raw.cash_received, 'cash_received'),
+    change: toOptionalMoney(raw.change, 'change'),
+    customer: counter ? null : toCustomer(raw.customer ?? {}),
+    address: counter ? null : toAddress(raw.address ?? {}),
     note: raw.note ?? '',
     items: (raw.items ?? []).map(toOrderItem),
     subtotal: requireMoney(raw.subtotal, 'subtotal'),

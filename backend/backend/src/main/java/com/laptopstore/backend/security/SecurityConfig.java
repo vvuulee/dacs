@@ -61,6 +61,9 @@ public class SecurityConfig {
                         // Cho phép toàn bộ hoạt động POS Bán hàng & Đặt hàng Online
                         .requestMatchers("/api/orders/**").permitAll()
 
+                        // Cho phép hoạt động của phân hệ Nhân viên / Quầy Staff
+                        .requestMatchers("/api/staff/**").permitAll()
+
                         // Cho phép kiểm kê nguyên nhiên liệu cuối ca tại quầy POS
                         .requestMatchers("/api/ingredients/**").permitAll()
 

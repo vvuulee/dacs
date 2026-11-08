@@ -24,6 +24,23 @@ export function createHttpAdapter(baseUrl) {
     getOffers: () => request('/offers', { baseUrl }),
     validateVoucher: (body) => request('/vouchers/validate', { baseUrl, method: 'POST', body }),
     getProduct: (id) => request(`/products/${encodeURIComponent(id)}`, { baseUrl }),
+    // Nhân viên: gắn token nhân viên (auth: 'staff'); đăng nhập không gắn token.
+    staffLogin: (body) => request('/staff/login', { baseUrl, method: 'POST', body, auth: false }),
+    staffLogout: () => request('/staff/logout', { baseUrl, method: 'POST', auth: 'staff' }),
+    staffGetMe: () => request('/staff/me', { baseUrl, auth: 'staff' }),
+    staffChangePassword: (body) => request('/staff/me/password', { baseUrl, method: 'POST', body, auth: 'staff' }),
+    staffCreateOrder: (body) => request('/staff/orders', { baseUrl, method: 'POST', body, auth: 'staff' }),
+    staffGetOnlineOrders: ({ status } = {}) => request('/staff/orders/online', { baseUrl, params: { status }, auth: 'staff' }),
+    staffUpdateOrderStatus: (id, status) =>
+      request(`/staff/orders/${encodeURIComponent(id)}/status`, { baseUrl, method: 'PATCH', body: { status }, auth: 'staff' }),
+    staffGetTodayOrders: () => request('/staff/orders/today', { baseUrl, auth: 'staff' }),
+    staffGetTodayReport: () => request('/staff/reports/today', { baseUrl, auth: 'staff' }),
+    staffGetVouchers: () => request('/staff/vouchers', { baseUrl, auth: 'staff' }),
+    staffCreateVoucher: (body) => request('/staff/vouchers', { baseUrl, method: 'POST', body, auth: 'staff' }),
+    staffDeleteVoucher: (id) => request(`/staff/vouchers/${encodeURIComponent(id)}`, { baseUrl, method: 'DELETE', auth: 'staff' }),
+    staffGetProducts: () => request('/staff/products', { baseUrl, auth: 'staff' }),
+    staffSetAvailability: (id, isAvailable) =>
+      request(`/staff/products/${encodeURIComponent(id)}`, { baseUrl, method: 'PATCH', body: { is_available: isAvailable }, auth: 'staff' }),
   };
 }
 

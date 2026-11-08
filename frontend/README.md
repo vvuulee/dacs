@@ -1,6 +1,6 @@
-# Cà Phê Mẫu — web đặt đồ uống (giai đoạn 1–4)
+# Cà Phê Mẫu — web đặt đồ uống (giai đoạn 1–5)
 
-Frontend desktop (React + Vite, JavaScript): Trang chủ, Menu, Chi tiết món, Giỏ hàng, Thanh toán, trả tiền online giả lập, Theo dõi đơn, Tài khoản (đăng ký, đăng nhập, quên mật khẩu, hồ sơ, lịch sử đơn), Cửa hàng (chỉ xem) và Ưu đãi / mã giảm giá. Chạy bằng dữ liệu mẫu; sẵn sàng nối API thật qua lớp adapter/mapper.
+Frontend desktop (React + Vite, JavaScript): Trang chủ, Menu, Chi tiết món, Giỏ hàng, Thanh toán, trả tiền online giả lập, Theo dõi đơn, Tài khoản (đăng ký, đăng nhập, quên mật khẩu, hồ sơ, lịch sử đơn), Cửa hàng (chỉ xem), Ưu đãi / mã giảm giá, và **trang nhân viên** `/staff` (bán tại quầy, đơn online, voucher, tồn kho, lịch sử hôm nay). Chạy bằng dữ liệu mẫu; sẵn sàng nối API thật qua lớp adapter/mapper.
 
 Tài liệu: `docs/superpowers/specs/` (thiết kế) và `docs/superpowers/plans/` (kế hoạch) của từng giai đoạn.
 
@@ -32,7 +32,7 @@ Hỗ trợ màn hình từ khoảng 1024px trở lên; chưa có bản điện t
 | `/account` | Hồ sơ (họ tên, số điện thoại, một địa chỉ mặc định), đổi mật khẩu, đăng xuất — cần đăng nhập |
 | `/account/orders` | Lịch sử đơn của tài khoản — cần đăng nhập |
 
-Đơn gần đây được nhớ trong trình duyệt (tối đa 10). Mock đơn hàng lưu trong `localStorage`; trạng thái đơn tính theo thời gian trôi qua (Chờ xác nhận → Đang pha chế → Đang giao → Đã giao, mỗi bước 15–45 giây). Nút "Giả lập đã thanh toán" chỉ có ở chế độ mock.
+Đơn gần đây được nhớ trong trình duyệt (tối đa 10). Mock đơn hàng lưu trong `localStorage`; trạng thái đơn **do nhân viên chuyển** ở `/staff/orders` (Chờ xác nhận → Đang pha chế → Đang giao → Đã giao), không còn tự chạy theo thời gian; chỉ hạn thanh toán online 5 phút vẫn tính theo thời gian. Nút "Giả lập đã thanh toán" chỉ có ở chế độ mock.
 
 ## Nối API thật
 
@@ -133,6 +133,58 @@ POST /orders                thêm trường tùy chọn voucher_code; đơn tr�
 - Mock: người dùng, phiên, token đặt lại mật khẩu nằm trong `localStorage` của mock; mật khẩu chỉ băm đơn giản, **không phải mẫu bảo mật**. Ở chế độ mock, trang quên mật khẩu hiện "hộp thư giả lập" chứa link đặt lại (`peekResetToken` chỉ có ở mock); backend thật gửi email.
 - Chưa có xác minh email; chống dò mật khẩu và giới hạn tốc độ là việc của backend. Báo "email đã được đăng ký" làm lộ email nào có tài khoản (đánh đổi thông thường).
 
+## Trang nhân viên
+
+Khu `/staff/*` dùng layout riêng (sidebar nâu, không có header/footer của khách) và tải lười. Phiên nhân viên lưu ở khoá riêng (`coffee-web:staff-session`) nên một máy có thể đăng nhập cả khách lẫn nhân viên; 401/403 của API nhân viên chỉ đăng xuất nhân viên.
+
+**Tài khoản mẫu (chỉ chế độ mock):** `nhanvien@caphe.test` / `nhanvien123`.
+
+| Route | Nội dung |
+|---|---|
+| `/staff/login` | Đăng nhập nhân viên (không có đăng ký); `?returnTo=` chỉ nhận đường dẫn trong `/staff` |
+| `/staff` | Bán hàng tại quầy: tại bàn (bắt buộc số bàn) / mang đi, chọn size–topping, áp voucher, tiền mặt (gợi ý số tiền, tiền thối) hoặc chuyển khoản, in hoá đơn 80mm |
+| `/staff/orders` | Đơn online hôm nay theo tab trạng thái, mỗi đơn một nút đi bước tiếp; huỷ được khi chưa đi giao; tự tải lại mỗi 5 giây |
+| `/staff/vouchers` | Danh sách voucher (cả mã hết hạn), tạo và xoá voucher |
+| `/staff/inventory` | Bật/tắt Còn/Hết cho từng món; khách online và quầy đều thấy ngay |
+| `/staff/history` | Đơn và thống kê **chỉ hôm nay** (cả quầy và online); không xem được ngày khác |
+| `/staff/account` | Hồ sơ, đổi mật khẩu, đăng xuất |
+
+- Đơn tại quầy không có phí giao, tạo ra là `completed`/`paid`. Mã `FREESHIP` không dùng tại quầy. Chuyển khoản tại quầy do nhân viên tự xác nhận ("Đã nhận chuyển khoản").
+- Doanh thu hôm nay = tổng tiền các đơn hôm nay, trừ đơn huỷ và đơn chờ thanh toán. "Hôm nay" do backend quyết định (mock dùng giờ máy).
+- Mock lưu voucher (`coffee-web:mock-vouchers`), trạng thái còn hàng (`coffee-web:mock-availability`) và phiên nhân viên trong `localStorage`; mở tab khách và tab nhân viên cạnh nhau để thử đồng bộ.
+
+### Hợp đồng API giả định cho nhân viên (REST, chỉ để đối chiếu)
+
+Mọi request gửi `Authorization: Bearer <token nhân viên>`; token sai/hết hạn → 401, token của khách → 403.
+
+```
+POST   /staff/login {email,password}       → {token, expires_at, staff:{id,name,email,role}}
+POST   /staff/logout                       → 204
+GET    /staff/me                           → staff
+POST   /staff/me/password {current_password,new_password} → 204
+POST   /staff/orders                       → order (đơn tại quầy)
+       { client_request_id, service_type:'dine_in'|'takeaway', table:string|null,
+         items:[{product_id,size_id,topping_ids,note,quantity}], voucher_code?,
+         payment_method:'cash'|'bank_transfer', cash_received? }
+GET    /staff/orders/online?status=        → order[]  (đơn online hôm nay, mới nhất trước)
+PATCH  /staff/orders/:id/status {status}   → order    (sai bước hoặc đã bị đổi → 409)
+GET    /staff/orders/today                 → order[]  (quầy + online, chỉ hôm nay)
+GET    /staff/reports/today                → { date, order_count, revenue, cancelled_count,
+                                               by_source:{counter:{count,revenue}, online:{count,revenue}},
+                                               by_payment:{cash, bank_transfer, wallet} }
+GET    /staff/vouchers                     → voucher[]
+POST   /staff/vouchers                     → voucher; trùng mã → 409
+DELETE /staff/vouchers/:id                 → 204; không có → 404
+GET    /staff/products                     → product[] (có cả món hết hàng)
+PATCH  /staff/products/:id {is_available}  → product
+POST   /vouchers/validate                  → thêm trường tuỳ chọn source:'counter'
+```
+
+- `order` có thêm `source:'online'|'counter'`, `service_type:'delivery'|'dine_in'|'takeaway'`, `table`, `cash_received`, `change`; trạng thái mới `completed`. Đơn quầy có `customer`/`address` là `null`.
+- Voucher: `{ id, code, title, description, type:'percent'|'fixed'|'freeship', value, max_discount, min_order, expires_at, listed }`.
+- Chuyển bước hợp lệ: `placed→preparing→delivering→delivered`, và `placed|preparing→cancelled`.
+- Đặt món đang tắt (`is_available:false`) → 422 "Món X đã hết" (cả đơn khách lẫn đơn quầy).
+
 ## Chưa có (các giai đoạn sau)
 
-Chọn cửa hàng khi đặt hàng, bản đồ nhúng, kho voucher riêng của tài khoản, cổng thanh toán thật, xác minh email, nhiều địa chỉ, nhận đơn cũ về tài khoản, khách tự hủy/sửa đơn, đồng bộ đăng xuất giữa các tab.
+Chọn cửa hàng khi đặt hàng, bản đồ nhúng, kho voucher riêng của tài khoản, cổng thanh toán thật, xác minh email, nhiều địa chỉ, nhận đơn cũ về tài khoản, khách tự hủy/sửa đơn, đồng bộ đăng xuất giữa các tab; với nhân viên: phân quyền quản lý, sửa voucher, số lượng tồn, xem ngày khác/xuất báo cáo, máy in nhiệt, thông báo khi có đơn mới.

@@ -25,6 +25,14 @@
   --radius-pill: 999px;
   --shadow-lift: 0 2px 0 var(--color-border), 0 10px 20px -14px rgb(59 42 30 / 0.45);
   --content-width: 1320px;
+  /* Tông nâu chỉ dùng cho giao diện nhân viên (/staff). */
+  --staff-bg: #f3e6d6;
+  --staff-sidebar: #7a573f;
+  --staff-accent: #8a6146;
+  --staff-surface: #fffaf2;
+  --staff-surface-soft: #f6ebdd;
+  --staff-text: #4a3222;
+  --staff-danger: #e05a4f;
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--color-bg); color: var(--color-text); font-family: var(--font-body); font-feature-settings: 'tnum'; overflow-x: clip; }

@@ -5,7 +5,7 @@ import { useApplyVoucher } from '../hooks/useApplyVoucher';
 import FormField, { fieldProps } from './FormField';
 import styles from './VoucherBox.module.css';
 
-export default function VoucherBox({ items, applied, cartChanged, onApplied, onRemove }) {
+export default function VoucherBox({ items, applied, cartChanged, onApplied, onRemove, source }) {
   const apply = useApplyVoucher();
   const [input, setInput] = useState('');
   const [error, setError] = useState('');
@@ -22,7 +22,7 @@ export default function VoucherBox({ items, applied, cartChanged, onApplied, onR
     }
     setError('');
     busyRef.current = true;
-    apply.mutate({ code, items }, {
+    apply.mutate({ code, items, source }, {
       // Mã sai chỉ hiện lý do; mã đang áp (nếu có) giữ nguyên, chỉ bị thay khi mã mới được áp thành công.
       onSuccess: (result) => {
         if (result.valid) {

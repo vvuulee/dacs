@@ -19,3 +19,10 @@ it('phản hồi lạ ({ valid: "yes" }) → ném lỗi', async () => {
   adapter.validateVoucher.mockResolvedValue({ valid: 'yes' });
   await expect(validateVoucher({ code: 'X', items })).rejects.toThrow(/valid/);
 });
+it('có source thì gửi kèm source; không có thì không gửi', async () => {
+  adapter.validateVoucher.mockResolvedValue({ valid: false, reason: 'x' });
+  await validateVoucher({ code: 'A1B', items, source: 'counter' });
+  await validateVoucher({ code: 'A1B', items });
+  expect(adapter.validateVoucher.mock.calls.at(-2)[0].source).toBe('counter');
+  expect(adapter.validateVoucher.mock.calls.at(-1)[0]).not.toHaveProperty('source');
+});

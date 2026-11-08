@@ -20,9 +20,9 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const invalid = (message) => new ApiError(422, message);
 const iso = (ms) => new Date(ms).toISOString();
 const normalizeEmail = (email) => String(email ?? '').trim().toLowerCase();
-const newToken = () => Array.from({ length: TOKEN_LENGTH }, () => Math.floor(Math.random() * HEX_BASE).toString(HEX_BASE)).join('');
+export const newToken = () => Array.from({ length: TOKEN_LENGTH }, () => Math.floor(Math.random() * HEX_BASE).toString(HEX_BASE)).join('');
 
-function hashPassword(email, password) {
+export function hashPassword(email, password) {
   let hash = FNV_OFFSET;
   for (const char of `${email}\u0000${password}`) {
     hash ^= char.codePointAt(0);
@@ -170,3 +170,6 @@ export function createAuthStore(now = () => Date.now()) {
     },
   };
 }
+
+// Dùng chung cho staffStore (cùng cách lưu danh sách mock trong localStorage).
+export { load as loadList, save as saveList };

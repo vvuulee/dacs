@@ -1,3 +1,4 @@
+import { saveStaffSession } from '../../features/staff/session';
 import { clearSession, saveSession } from '../../features/auth/session';
 import { createHttpAdapter } from './httpAdapter';
 
@@ -86,5 +87,62 @@ describe('cửa hàng, ưu đãi, voucher', () => {
     await createHttpAdapter(BASE).validateVoucher({ code: 'CHAO10', items: [] });
     expect(fetchMock.mock.calls[0][0]).toBe(`${BASE}/vouchers/validate`);
     expect(fetchMock.mock.calls[0][1]).toMatchObject({ method: 'POST', body: '{"code":"CHAO10","items":[]}' });
+  });
+});
+
+describe('API nhân viên', () => {
+  afterEach(() => localStorage.clear());
+  it('staffLogin POST /staff/login không gắn token', async () => {
+    saveStaffSession({ token: 'nv', expiresAt: '2099-01-01T00:00:00.000Z' });
+    const fetchMock = stubFetch();
+    await createHttpAdapter(BASE).staffLogin({ email: 'a', password: 'b' });
+    expect(fetchMock.mock.calls[0][0]).toBe(`${BASE}/staff/login`);
+    expect(fetchMock.mock.calls[0][1].method).toBe('POST');
+    expect(fetchMock.mock.calls[0][1].headers.Authorization).toBeUndefined();
+  });
+  it.each([
+    ['staffLogout', [], '/staff/logout', 'POST'],
+    ['staffGetMe', [], '/staff/me', 'GET'],
+    ['staffChangePassword', [{ a: 1 }], '/staff/me/password', 'POST'],
+  ])('%s → %s', async (name, args, path, method) => {
+    saveStaffSession({ token: 'nv', expiresAt: '2099-01-01T00:00:00.000Z' });
+    const fetchMock = stubFetch();
+    await createHttpAdapter(BASE)[name](...args);
+    expect(fetchMock.mock.calls[0][0]).toBe(`${BASE}${path}`);
+    expect(fetchMock.mock.calls[0][1].method).toBe(method);
+    expect(fetchMock.mock.calls[0][1].headers.Authorization).toBe('Bearer nv');
+  });
+});
+
+describe('API nghiệp vụ nhân viên', () => {
+  afterEach(() => localStorage.clear());
+  it.each([
+    ['staffCreateOrder', [{ a: 1 }], '/staff/orders', 'POST'],
+    ['staffGetOnlineOrders', [{ status: 'placed' }], '/staff/orders/online?status=placed', 'GET'],
+    ['staffGetOnlineOrders', [], '/staff/orders/online', 'GET'],
+    ['staffUpdateOrderStatus', ['CF 1', 'preparing'], '/staff/orders/CF%201/status', 'PATCH'],
+    ['staffGetTodayOrders', [], '/staff/orders/today', 'GET'],
+    ['staffGetTodayReport', [], '/staff/reports/today', 'GET'],
+    ['staffGetVouchers', [], '/staff/vouchers', 'GET'],
+    ['staffCreateVoucher', [{ a: 1 }], '/staff/vouchers', 'POST'],
+    ['staffDeleteVoucher', ['v/1'], '/staff/vouchers/v%2F1', 'DELETE'],
+    ['staffGetProducts', [], '/staff/products', 'GET'],
+    ['staffSetAvailability', ['bac-xiu', false], '/staff/products/bac-xiu', 'PATCH'],
+  ])('%s → %s', async (name, args, path, method) => {
+    saveStaffSession({ token: 'nv', expiresAt: '2099-01-01T00:00:00.000Z' });
+    const fetchMock = stubFetch();
+    await createHttpAdapter(BASE)[name](...args);
+    expect(fetchMock.mock.calls[0][0]).toBe(`${BASE}${path}`);
+    expect(fetchMock.mock.calls[0][1].method).toBe(method);
+    expect(fetchMock.mock.calls[0][1].headers.Authorization).toBe('Bearer nv');
+  });
+  it('PATCH status và availability gửi body đúng', async () => {
+    saveStaffSession({ token: 'nv', expiresAt: '2099-01-01T00:00:00.000Z' });
+    const fetchMock = stubFetch();
+    const adapter = createHttpAdapter(BASE);
+    await adapter.staffUpdateOrderStatus('CF1', 'preparing');
+    await adapter.staffSetAvailability('bac-xiu', false);
+    expect(fetchMock.mock.calls[0][1].body).toBe('{"status":"preparing"}');
+    expect(fetchMock.mock.calls[1][1].body).toBe('{"is_available":false}');
   });
 });

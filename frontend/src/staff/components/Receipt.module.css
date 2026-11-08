@@ -1,0 +1,19 @@
+.receipt { width: 80mm; max-width: 100%; margin: 0 auto; padding: var(--space-3); border: 1px dashed var(--color-border); background: #fff; color: #000; font-size: 0.9rem; }
+.brand { margin: 0 0 var(--space-2); text-align: center; font-size: 1.1rem; text-transform: uppercase; }
+.meta { margin: 2px 0; }
+.items { width: 100%; margin: var(--space-2) 0; border-collapse: collapse; }
+.items th, .items td { padding: 3px 2px; border-bottom: 1px dotted #999; text-align: right; vertical-align: top; }
+.items th:first-child, .items td:first-child { text-align: left; }
+.items small { display: block; color: #555; }
+.sums { display: grid; grid-template-columns: 1fr auto; gap: 2px var(--space-2); margin: 0; }
+.sums dd { margin: 0; text-align: right; }
+.grand { font-size: 1.05rem; font-weight: 700; }
+.thanks { margin-top: var(--space-3); text-align: center; }
+
+@media print {
+  :global(body *) { visibility: hidden; }
+  .receipt, .receipt * { visibility: visible; }
+  /* fixed: không phụ thuộc cột cha có position (cột phải của POS là sticky). */
+  .receipt { position: fixed; top: 0; left: 0; margin: 0; border: 0; }
+  @page { size: 80mm auto; margin: 0; }
+}

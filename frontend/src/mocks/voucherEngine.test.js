@@ -48,3 +48,10 @@ it('mức giảm không bao giờ vượt tạm tính (percent/fixed) hay phí g
     }
   }
 });
+
+describe('nguồn đơn', () => {
+  it('freeship tại quầy bị từ chối', () =>
+    expect(evaluateVoucher('FREESHIP', 100000, 0, NOW, undefined, 'counter')).toEqual({ ok: false, reason: 'Mã chỉ áp dụng cho đơn giao hàng' }));
+  it('mã khác tại quầy vẫn dùng được', () =>
+    expect(evaluateVoucher('GIAM20K', 120000, 0, NOW, undefined, 'counter')).toMatchObject({ ok: true, discount: 20000 }));
+});

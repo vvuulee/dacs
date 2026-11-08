@@ -24,10 +24,10 @@ public class PosOrderRequest {
     // Hỗ trợ cấu trúc address: { street, ward_name, province_name } từ coffee-web
     private Object address;
 
-    @JsonAlias({"orderType", "order_type"})
+    @JsonAlias({"orderType", "order_type", "service_type", "serviceType"})
     private String orderType;     // DINE_IN (Tại quán), TAKE_AWAY (Mang về), DELIVERY (Giao hàng)
 
-    @JsonAlias({"tableName", "table_name"})
+    @JsonAlias({"tableName", "table_name", "table"})
     private String tableName;     // Bàn 01, Bàn 02...
 
     private String status;        // placed, preparing, delivering, delivered, cancelled, PAID, UNPAID

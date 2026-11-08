@@ -1,0 +1,5 @@
+.toolbar { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; justify-content: space-between; margin-bottom: var(--space-3); }
+.tabs { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.tab { padding: 8px 16px; border: 0; border-radius: var(--radius-sm); background: var(--staff-accent); color: #fff; font: inherit; font-weight: 600; opacity: 0.75; cursor: pointer; }
+.tab[aria-pressed='true'] { background: var(--staff-sidebar); opacity: 1; }
+.search { min-width: 220px; padding: 9px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); font: inherit; }

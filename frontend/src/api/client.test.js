@@ -1,5 +1,6 @@
+import { saveStaffSession } from '../features/staff/session';
 import { clearSession, saveSession } from '../features/auth/session';
-import { ApiError, request, setUnauthorizedHandler } from './client';
+import { ApiError, request, setStaffUnauthorizedHandler, setUnauthorizedHandler } from './client';
 
 const okJson = (body) => ({ ok: true, status: 200, json: async () => body });
 afterEach(() => vi.unstubAllGlobals());
@@ -147,5 +148,36 @@ describe('đọc lỗi từ phản hồi', () => {
     stubError(401, async () => ({ message: 'Phiên đăng nhập đã hết hạn' }));
     await expect(call(true)).rejects.toMatchObject({ status: 401, message: 'Phiên đăng nhập đã hết hạn' });
     expect(handler).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('auth: staff', () => {
+  afterEach(() => { clearSession(); localStorage.clear(); setUnauthorizedHandler(null); setStaffUnauthorizedHandler(null); });
+  it('gửi token nhân viên, không gửi token khách', async () => {
+    saveSession({ token: 'khach', expiresAt: '2099-01-01T00:00:00.000Z' });
+    saveStaffSession({ token: 'nv', expiresAt: '2099-01-01T00:00:00.000Z' });
+    const fetchMock = vi.fn().mockResolvedValue(okJson({}));
+    vi.stubGlobal('fetch', fetchMock);
+    await request('/staff/me', { baseUrl: '/api', auth: 'staff' });
+    expect(fetchMock.mock.calls[0][1].headers.Authorization).toBe('Bearer nv');
+  });
+  it.each([401, 403])('%i có token nhân viên → chỉ gọi handler nhân viên', async (status) => {
+    saveStaffSession({ token: 'nv', expiresAt: '2099-01-01T00:00:00.000Z' });
+    const staffHandler = vi.fn();
+    const customerHandler = vi.fn();
+    setStaffUnauthorizedHandler(staffHandler);
+    setUnauthorizedHandler(customerHandler);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status, json: async () => ({}) }));
+    await expect(request('/staff/me', { baseUrl: '/api', auth: 'staff' })).rejects.toMatchObject({ status });
+    expect(staffHandler).toHaveBeenCalledTimes(1);
+    expect(customerHandler).not.toHaveBeenCalled();
+  });
+  it('403 trên request của khách không gọi handler nào', async () => {
+    saveSession({ token: 'khach', expiresAt: '2099-01-01T00:00:00.000Z' });
+    const customerHandler = vi.fn();
+    setUnauthorizedHandler(customerHandler);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 403, json: async () => ({}) }));
+    await expect(request('/me', { baseUrl: '/api' })).rejects.toMatchObject({ status: 403 });
+    expect(customerHandler).not.toHaveBeenCalled();
   });
 });

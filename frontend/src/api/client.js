@@ -1,5 +1,6 @@
 import { ERROR_MESSAGE_MAX } from '../constants';
 import { getToken } from '../features/auth/session';
+import { getStaffToken } from '../features/staff/session';
 
 export class ApiError extends Error {
   constructor(status, message, code) {
@@ -42,6 +43,25 @@ export function notifyUnauthorized() {
   unauthorizedHandler?.();
 }
 
+let staffUnauthorizedHandler = null;
+
+// Phiên nhân viên tách khỏi phiên khách: 401/403 của API nhân viên chỉ đăng xuất nhân viên.
+export function setStaffUnauthorizedHandler(handler) {
+  staffUnauthorizedHandler = handler;
+}
+
+export function notifyStaffUnauthorized() {
+  staffUnauthorizedHandler?.();
+}
+
+const UNAUTHORIZED = 401;
+const FORBIDDEN = 403;
+
+function tokenFor(auth) {
+  if (auth === 'staff') return getStaffToken();
+  return auth ? getToken() : null;
+}
+
 function buildInit({ method, signal, body, token }) {
   const init = { method, signal };
   const headers = {};
@@ -55,7 +75,7 @@ function buildInit({ method, signal, body, token }) {
 }
 
 export async function request(path, { baseUrl, params = {}, signal, method = 'GET', body, auth = true } = {}) {
-  const token = auth ? getToken() : null;
+  const token = tokenFor(auth);
   let response;
   try {
     response = await fetch(buildUrl(baseUrl, path, params), buildInit({ method, signal, body, token }));
@@ -65,7 +85,11 @@ export async function request(path, { baseUrl, params = {}, signal, method = 'GE
   }
   if (!response.ok) {
     const { message, code } = await readErrorDetail(response);
-    if (response.status === 401 && token) notifyUnauthorized();
+    if (token && auth === 'staff' && (response.status === UNAUTHORIZED || response.status === FORBIDDEN)) {
+      notifyStaffUnauthorized();
+    } else if (token && response.status === UNAUTHORIZED) {
+      notifyUnauthorized();
+    }
     throw new ApiError(response.status, message ?? `Máy chủ trả lỗi ${response.status}`, code);
   }
   if (response.status === 204) return null;

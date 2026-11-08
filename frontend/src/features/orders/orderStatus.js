@@ -5,6 +5,7 @@ export const STATUS_LABELS = {
   delivering: 'Đang giao',
   delivered: 'Đã giao',
   cancelled: 'Đã hủy',
+  completed: 'Hoàn tất',
 };
 
 export const PAYMENT_STATUS_LABELS = {
@@ -22,7 +23,13 @@ export const PAYMENT_METHODS = [
 
 export const PROGRESS_STEPS = ['placed', 'preparing', 'delivering', 'delivered'];
 
-const FINAL_STATUSES = ['delivered', 'cancelled'];
+const FINAL_STATUSES = ['delivered', 'cancelled', 'completed'];
+
+// Chỉ backend quyết định chuyển bước; frontend dùng bảng này để chọn nút hiển thị.
+export const NEXT_STATUS = { placed: 'preparing', preparing: 'delivering', delivering: 'delivered' };
+export const CANCELLABLE = ['placed', 'preparing'];
+export const canTransition = (from, to) =>
+  NEXT_STATUS[from] === to || (to === 'cancelled' && CANCELLABLE.includes(from));
 
 export const isFinalStatus = (status) => FINAL_STATUSES.includes(status);
 export const isOnlinePayment = (methodId) => PAYMENT_METHODS.find((m) => m.id === methodId)?.online === true;

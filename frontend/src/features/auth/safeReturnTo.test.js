@@ -5,3 +5,8 @@ it.each(['//evil.com', 'https://evil.com', '/\\evil', 'javascript:alert(1)', '',
   '%s → "/"',
   (v) => expect(safeReturnTo(v)).toBe('/'),
 );
+
+it('fallback tuỳ chọn', () => {
+  expect(safeReturnTo('//evil.com', '/staff')).toBe('/staff');
+  expect(safeReturnTo(null, '/staff')).toBe('/staff');
+});
